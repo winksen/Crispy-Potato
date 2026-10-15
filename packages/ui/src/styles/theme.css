@@ -1,0 +1,27 @@
+/*
+ * Design tokens. Consumers import this once after Tailwind:
+ *
+ *   @import "tailwindcss";
+ *   @import "@crispy-potato/ui/theme.css";
+ *   @source "../node_modules/@crispy-potato/ui/dist";
+ *
+ * Tokens are semantic (what it is for), not literal (what color it is), so theming is a matter of
+ * overriding variables. Every foreground/background pair must meet WCAG AA (4.5:1 for text,
+ * 3:1 for UI boundaries and focus indicators) in every theme we ship.
+ */
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+
+  --color-primary: #1d4ed8;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #e2e8f0;
+  --color-secondary-foreground: #0f172a;
+
+  --color-hover-overlay: rgb(0 0 0 / 0.1);
+
+  --color-focus-ring: #1d4ed8;
+
+  --radius-control: 0.375rem;
+}

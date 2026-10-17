@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM relations",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "760793e8ede91a2b40a6d654ff5f18ecd75206b3e6463b1ae7e73d00126ce5e8"
+}

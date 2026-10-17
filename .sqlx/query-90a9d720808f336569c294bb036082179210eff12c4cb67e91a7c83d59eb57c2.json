@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM vocabulary_terms",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "90a9d720808f336569c294bb036082179210eff12c4cb67e91a7c83d59eb57c2"
+}

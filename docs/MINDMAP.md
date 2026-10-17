@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.21` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.22` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
 
 ---
 
@@ -194,3 +194,9 @@ Checks: cargo fmt, clippy, test (47 tests), validate and schema --check pass, in
 **Sync.** cli sync writes a stable validated snapshot, derives reverse relations, imports samples and vocabularies, hashes all content with sha2 0.10, skips unchanged runs and retires removed entities without deleting collected history
 
 Checks: cargo fmt, clippy, test (48 tests), validate, schema --check and cargo deny pass; sync repeatability, invalid-input rollback and retirement are tested in Postgres; GitHub CI awaits a push
+
+### V0.1.22 — SQL checked at compile time, with offline builds.
+
+**Checked queries.** Application SQL uses sqlx macros, .sqlx metadata is committed, SQLX_OFFLINE defaults to true and CI checks metadata against migrated Postgres
+
+Checks: cargo fmt, clippy, test (48 tests), validate, schema --check, sqlx prepare --check and offline cargo build pass; a deliberately misspelled column fails compilation; GitHub CI awaits a push

@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO observations (entity_id, metric, value, unit, period, observed_at, source_id) VALUES ($1,$2,$3,$4,$5,$6::text::date,$7) ON CONFLICT (entity_id,metric,period,observed_at,source_id) DO UPDATE SET value=EXCLUDED.value, unit=EXCLUDED.unit",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Float8",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b6da84c9737878c91a4d81a4c66dc8821ea2bef77324b5cc4386d9629224cc6c"
+}

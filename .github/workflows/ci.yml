@@ -58,6 +58,16 @@ jobs:
       - name: Format
         run: cargo fmt --all --check
 
+      - name: Install SQLx tooling
+        run: cargo install sqlx-cli --version 0.8.6 --locked --no-default-features --features rustls,postgres
+
+      - name: Check SQL metadata
+        run: |
+          cargo sqlx migrate run --source crates/engine/migrations
+          cargo sqlx prepare --check --workspace -- --all-targets
+        env:
+          SQLX_OFFLINE: 'false'
+
       - name: Lints
         if: success() || failure()
         run: cargo clippy --all-targets --locked -- -D warnings

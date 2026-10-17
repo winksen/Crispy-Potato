@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE entities SET retired=true WHERE NOT retired AND NOT (id = ANY($1))",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7a1eff9e071ece42e07b4dfab56f8dd9c422b53af70f221e09df184f4cda1610"
+}

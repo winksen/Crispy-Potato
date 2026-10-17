@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.22 (2026-10-17)
+
+SQL checked at compile time, with offline builds.
+
+### Added
+- **Checked queries.** Application SQL uses sqlx macros, .sqlx metadata is committed, SQLX_OFFLINE defaults to true and CI checks metadata against migrated Postgres
+
+### Not done
+- cargo fmt, clippy, test (48 tests), validate, schema --check, sqlx prepare --check and offline cargo build pass; a deliberately misspelled column fails compilation; GitHub CI awaits a push
+
+### Upgrading
+- Install sqlx-cli 0.8.6 and regenerate .sqlx metadata whenever a query changes; normal builds need no database.
+
 ## V0.1.21 (2026-10-17)
 
 Validated content sync in one transaction.

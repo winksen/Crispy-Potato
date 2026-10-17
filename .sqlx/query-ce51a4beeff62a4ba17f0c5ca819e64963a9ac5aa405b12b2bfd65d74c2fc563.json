@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO entities (id,kind,name,document,content_hash) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ce51a4beeff62a4ba17f0c5ca819e64963a9ac5aa405b12b2bfd65d74c2fc563"
+}

@@ -77,14 +77,14 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
     })?;
     let version = format!("{:x}", Sha256::digest(serde_json::to_vec(&snapshot)?));
     let mut tx = pool.begin().await?;
-    sqlx::query("SELECT pg_advisory_xact_lock(1129337689)")
-        .execute(&mut *tx)
+    sqlx::query!("SELECT pg_advisory_xact_lock(1129337689)::text")
+        .fetch_one(&mut *tx)
         .await?;
-    let previous: Option<(String,)> =
-        sqlx::query_as("SELECT value FROM meta WHERE key='content_version'")
+    let previous: Option<String> =
+        sqlx::query_scalar!("SELECT value FROM meta WHERE key='content_version'")
             .fetch_optional(&mut *tx)
             .await?;
-    if previous.as_ref().is_some_and(|v| v.0 == version) {
+    if previous.as_ref().is_some_and(|v| *v == version) {
         return Ok(Report {
             changed: 0,
             retired: 0,
@@ -92,36 +92,42 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
         });
     }
     let ids: Vec<String> = content.entities.iter().map(|e| e.id.clone()).collect();
-    let retired =
-        sqlx::query("UPDATE entities SET retired=true WHERE NOT retired AND NOT (id = ANY($1))")
-            .bind(&ids)
-            .execute(&mut *tx)
-            .await?
-            .rows_affected();
+    let retired = sqlx::query!(
+        "UPDATE entities SET retired=true WHERE NOT retired AND NOT (id = ANY($1))",
+        &ids
+    )
+    .execute(&mut *tx)
+    .await?
+    .rows_affected();
     // Delete/reinsert dependent curated data so removed aliases and edges disappear.
-    sqlx::query("DELETE FROM aliases").execute(&mut *tx).await?;
-    sqlx::query("DELETE FROM relations")
+    sqlx::query!("DELETE FROM aliases")
         .execute(&mut *tx)
         .await?;
-    sqlx::query("DELETE FROM samples").execute(&mut *tx).await?;
-    sqlx::query("DELETE FROM vocabulary_terms")
+    sqlx::query!("DELETE FROM relations")
         .execute(&mut *tx)
         .await?;
-    sqlx::query("DELETE FROM planned_ids")
+    sqlx::query!("DELETE FROM samples")
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM vocabulary_terms")
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query!("DELETE FROM planned_ids")
         .execute(&mut *tx)
         .await?;
     let mut changed = 0;
     for entity in &content.entities {
         let document = serde_json::to_value(entity)?;
         let hash = format!("{:x}", Sha256::digest(serde_json::to_vec(&document)?));
-        changed += sqlx::query("INSERT INTO entities (id,kind,name,document,content_hash) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired")
-            .bind(&entity.id).bind(entity.kind.to_string()).bind(&entity.name).bind(&document).bind(&hash).execute(&mut *tx).await?.rows_affected();
+        changed += sqlx::query!("INSERT INTO entities (id,kind,name,document,content_hash) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired" ,&entity.id, entity.kind.to_string(), &entity.name, &document, &hash).execute(&mut *tx).await?.rows_affected();
         for alias in &entity.aliases {
-            sqlx::query("INSERT INTO aliases (alias,entity_id) VALUES ($1,$2)")
-                .bind(alias)
-                .bind(&entity.id)
-                .execute(&mut *tx)
-                .await?;
+            sqlx::query!(
+                "INSERT INTO aliases (alias,entity_id) VALUES ($1,$2)",
+                alias,
+                &entity.id
+            )
+            .execute(&mut *tx)
+            .await?;
         }
         for (relation, targets) in entity.relations.iter() {
             let reverse = match relation {
@@ -135,7 +141,7 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
                     (&entity.id, relation, target),
                     (target, reverse, &entity.id),
                 ] {
-                    sqlx::query("INSERT INTO relations (entity_id,relation,target_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING").bind(from).bind(kind).bind(to).execute(&mut *tx).await?;
+                    sqlx::query!("INSERT INTO relations (entity_id,relation,target_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING" ,from, kind, to).execute(&mut *tx).await?;
                 }
             }
         }
@@ -146,21 +152,25 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
                     .ok_or("sample missing from snapshot")?
                     .clone(),
             )?;
-            sqlx::query("INSERT INTO samples (entity_id,path,text) VALUES ($1,$2,$3)")
-                .bind(&entity.id)
-                .bind(sample)
-                .bind(text)
-                .execute(&mut *tx)
-                .await?;
+            sqlx::query!(
+                "INSERT INTO samples (entity_id,path,text) VALUES ($1,$2,$3)",
+                &entity.id,
+                sample,
+                text
+            )
+            .execute(&mut *tx)
+            .await?;
         }
     }
     for kind in model::Kind::ALL {
         for id in content.planned.ids(kind) {
-            sqlx::query("INSERT INTO planned_ids (id,kind) VALUES ($1,$2)")
-                .bind(id)
-                .bind(kind.to_string())
-                .execute(&mut *tx)
-                .await?;
+            sqlx::query!(
+                "INSERT INTO planned_ids (id,kind) VALUES ($1,$2)",
+                id,
+                kind.to_string()
+            )
+            .execute(&mut *tx)
+            .await?;
         }
     }
     let mut vocab = serde_json::to_value(&content.vocab.traits)?;
@@ -169,19 +179,19 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
         for (group, terms) in groups {
             if let Some(terms) = terms.as_object() {
                 for (term, document) in terms {
-                    sqlx::query(
+                    sqlx::query!(
                         "INSERT INTO vocabulary_terms (vocabulary,term,document) VALUES ($1,$2,$3)",
+                        group,
+                        term,
+                        document
                     )
-                    .bind(group)
-                    .bind(term)
-                    .bind(document)
                     .execute(&mut *tx)
                     .await?;
                 }
             }
         }
     }
-    sqlx::query("INSERT INTO meta (key,value) VALUES ('content_version',$1) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value").bind(&version).execute(&mut *tx).await?;
+    sqlx::query!("INSERT INTO meta (key,value) VALUES ('content_version',$1) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value" ,&version).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(Report {
         changed,

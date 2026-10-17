@@ -13,7 +13,7 @@ pub async fn connect(url: &str) -> Result<PgPool, sqlx::Error> {
         .idle_timeout(Duration::from_secs(300))
         .after_connect(|connection, _| {
             Box::pin(async move {
-                sqlx::query("SET statement_timeout = '30s'")
+                sqlx::query!("SET statement_timeout = '30s'")
                     .execute(connection)
                     .await?;
                 Ok(())

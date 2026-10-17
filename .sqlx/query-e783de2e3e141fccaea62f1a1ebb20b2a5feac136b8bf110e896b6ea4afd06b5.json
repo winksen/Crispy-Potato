@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO meta (key,value) VALUES ('content_version',$1) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e783de2e3e141fccaea62f1a1ebb20b2a5feac136b8bf110e896b6ea4afd06b5"
+}

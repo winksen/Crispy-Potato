@@ -28,3 +28,4 @@ It reports every problem with its file and field. See [docs/data-model.md](docs/
 
 - [Architecture](docs/architecture.md)
 - [Data model](docs/data-model.md)
+- [Release plan to V0.2.0](docs/RELEASES_0.1.md)

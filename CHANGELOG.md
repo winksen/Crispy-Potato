@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.20 (2026-10-17)
+
+Storage for collected data and provenance.
+
+### Added
+- **Collected data.** Migration 0002 adds sources, observations, quarantine, releases, facts, ingestion runs and HTTP validators; observations upsert by entity, metric, period, date and source; the data model documents all fourteen tables
+
+### Not done
+- cargo fmt, clippy, test (47 tests), validate and schema --check pass, including a real Postgres observation upsert test; GitHub CI awaits a push
+
+### Upgrading
+- Run cli migrate as the database owner.
+
 ## V0.1.19 (2026-10-17)
 
 Postgres storage and explicit migrations.

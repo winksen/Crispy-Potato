@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.19` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.20` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
 
 ---
 
@@ -182,3 +182,9 @@ Checks: Docker Compose startup and psql connection, cargo fmt, clippy, test (45 
 **Database.** sqlx 0.8 and Tokio 1, a five-connection pool with acquire and statement timeouts, cli migrate, seven curated-data tables and isolated database tests with Postgres in CI
 
 Checks: cargo fmt, clippy, test (46 tests), validate, schema --check and cargo deny pass; migrations run twice locally; GitHub CI awaits a push
+
+### V0.1.20 — Storage for collected data and provenance.
+
+**Collected data.** Migration 0002 adds sources, observations, quarantine, releases, facts, ingestion runs and HTTP validators; observations upsert by entity, metric, period, date and source; the data model documents all fourteen tables
+
+Checks: cargo fmt, clippy, test (47 tests), validate and schema --check pass, including a real Postgres observation upsert test; GitHub CI awaits a push

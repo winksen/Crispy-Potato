@@ -234,6 +234,29 @@ Fields that can be overridden: `inception`, `designers`, `developer`, `license`,
 
 ## Collected data
 
+### Database (V0.1.20)
+
+Migrations live in `crates/engine/migrations/`; `cli migrate` applies them as the database owner.
+
+| Table | Stored data / key |
+|---|---|
+| `entities` | Stable id, kind, name, curated JSONB document, content hash, retired flag |
+| `aliases` | Unique alias and owning entity |
+| `relations` | Entity, relation and target; targets may be planned ids |
+| `planned_ids` | Id and kind |
+| `vocabulary_terms` | Vocabulary, term and JSONB definition |
+| `samples` | Entity, relative path and sample text |
+| `meta` | Text key/value metadata, including content version |
+| `sources` | Id, name, URL, license, attribution and positive schedule in seconds |
+| `observations` | Entity, metric, period, date and source form the unique key; upsert replaces value and unit; time-range index on entity, metric, date |
+| `observations_quarantine` | Identity id, entity, source, candidate JSONB, reason and held timestamp |
+| `releases` | Entity, version and source key; release and end-of-life dates, LTS flag |
+| `facts` | Entity, field and source key; JSONB value and collection timestamp |
+| `ingestion_runs` | Identity id, source, start/end, status, changed/unchanged counts and JSONB errors |
+| `http_cache` | Opaque cache key, ETag, Last-Modified and last checked timestamp |
+
+Collected rows reference entities without cascading deletion, preserving history when entities retire. Observation values must be finite, nonnegative and at most 100 for percentages. Dates use Postgres `date`; run and collection times use `timestamptz`.
+
 ### Observations
 
 One row per measurement:

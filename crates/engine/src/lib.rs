@@ -2,6 +2,7 @@
 
 pub mod content;
 pub mod db;
+pub mod freshness;
 pub mod http;
 pub mod http_cache;
 pub mod ingest;

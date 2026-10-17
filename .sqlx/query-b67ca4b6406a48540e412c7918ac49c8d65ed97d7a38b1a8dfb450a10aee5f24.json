@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO source_entity_state (entity_id,source_id) VALUES ($1,$2) ON CONFLICT (entity_id,source_id) DO UPDATE SET last_attempt=now(),last_error=NULL",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b67ca4b6406a48540e412c7918ac49c8d65ed97d7a38b1a8dfb450a10aee5f24"
+}

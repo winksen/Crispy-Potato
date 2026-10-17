@@ -254,6 +254,7 @@ Migrations live in `crates/engine/migrations/`; `cli migrate` applies them as th
 | `facts` | Entity, field and source key; JSONB value and collection timestamp |
 | `ingestion_runs` | Identity id, source, start/end, status, changed/unchanged counts and JSONB errors |
 | `http_cache` | Opaque cache key, ETag, Last-Modified and last checked timestamp |
+| `source_entity_state` | Since V0.1.30: entity/source key, last attempt, last success and last fixed error category; success is independent of a later failed attempt |
 
 Collected rows reference entities without cascading deletion, preserving history when entities retire. Observation values must be finite, nonnegative and at most 100 for percentages. Dates use Postgres `date`; run and collection times use `timestamptz`.
 

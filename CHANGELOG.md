@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.30 (2026-10-17)
+
+Collection status separates attempts from successful freshness.
+
+### Added
+- **Freshness.** Migration 0003 tracks last attempt, success and failure per entity/source; the runner updates them and cli status lists each source run, failures and entities stale beyond twice their schedule
+
+### Not done
+- cargo fmt, clippy, test (66 tests), validate, schema --check and sqlx prepare --check pass; Postgres tests verify missing, recent and stale successes and that failures do not refresh data
+
+### Upgrading
+- Run cli migrate as the owner, then use cli status with DATABASE_URL.
+
 ## V0.1.29 (2026-10-17)
 
 Implausible measurements wait for review.

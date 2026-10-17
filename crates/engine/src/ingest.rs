@@ -122,6 +122,9 @@ pub async fn run(
         held: Vec::new(),
     };
     for entity in entities.iter().filter(|e| source.applies(e)) {
+        if !dry_run {
+            crate::freshness::attempt(pool, &entity.id, info.id).await?;
+        }
         let mut batch = match source.fetch(&context, entity).await {
             Ok(batch) => batch,
             Err(_) => {
@@ -189,6 +192,9 @@ pub async fn run(
         };
     }
     if let Some(id) = run_id {
+        for failure in &report.errors {
+            crate::freshness::failure(pool, &failure.entity, info.id, failure.reason).await?;
+        }
         let errors = serde_json::to_value(&report.errors)?;
         sqlx::query!("UPDATE ingestion_runs SET finished_at=now(),status=$2,changed=$3,unchanged=$4,errors=$5 WHERE id=$1", id, report.status, report.changed, report.unchanged, errors).execute(pool).await?;
     }
@@ -217,6 +223,7 @@ async fn store(
     for update in &batch.cache {
         http_cache::persist(&mut tx, update).await?;
     }
+    crate::freshness::success(&mut tx, &entity.id, source).await?;
     tx.commit().await?;
     Ok(held)
 }

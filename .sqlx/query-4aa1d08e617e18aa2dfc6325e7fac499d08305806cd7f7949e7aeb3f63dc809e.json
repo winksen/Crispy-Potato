@@ -1,0 +1,50 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT s.id,s.schedule_seconds,r.status,r.started_at::text AS last_run,r.finished_at::text AS finished_at,r.errors FROM sources s LEFT JOIN LATERAL (SELECT status,started_at,finished_at,errors FROM ingestion_runs WHERE source_id=s.id ORDER BY id DESC LIMIT 1) r ON true ORDER BY s.id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "schedule_seconds",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "status",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "last_run",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "finished_at",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "errors",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      null,
+      null,
+      true
+    ]
+  },
+  "hash": "4aa1d08e617e18aa2dfc6325e7fac499d08305806cd7f7949e7aeb3f63dc809e"
+}

@@ -57,6 +57,10 @@ Remove-Item Env:SQLX_OFFLINE
 
 Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no database. CI checks metadata against a fresh migrated Postgres service; a bad column fails macro expansion.
 
+## Freshness status (V0.1.30)
+
+After applying migration 0003, `cli status` prints JSON grouped by source: `source`, `schedule_seconds`, `last_run`, `finished_at`, `status`, `failures` and `entities`. Each entity has `last_attempt`, `last_success`, `failure` and `stale`. A missing success or a success older than twice the schedule is stale; a later failed attempt does not refresh it. Retired entities are omitted. Sources with no run have null run fields; only sources registered by a real run and entities attempted by that source are listed. A successful 304 refreshes success without rewriting observations. Dry runs change neither timestamp. No new settings.
+
 ## Quarantine (V0.1.29)
 
 `cli quarantine list` prints the oldest 100 held observations with ids and reasons. `cli quarantine release <id>` atomically moves an approved trend outlier into observations; `cli quarantine discard <id>` removes it. Invalid numeric ranges cannot be approved. Both commands use the writer URL.

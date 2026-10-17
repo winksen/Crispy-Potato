@@ -16,6 +16,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Show last runs, failures and entity freshness for each source.
+    Status,
     /// Inspect, release or discard held observations.
     Quarantine {
         #[command(subcommand)]
@@ -76,6 +78,26 @@ enum QuarantineAction {
 #[tokio::main]
 async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::Status => {
+            let Ok(url) = std::env::var("DATABASE_URL") else {
+                eprintln!("DATABASE_URL is required");
+                return ExitCode::FAILURE;
+            };
+            let Ok(pool) = engine::db::connect(&url).await else {
+                eprintln!("Cannot connect to the database");
+                return ExitCode::FAILURE;
+            };
+            match engine::freshness::status(&pool).await {
+                Ok(value) => {
+                    println!("{value:#}");
+                    ExitCode::SUCCESS
+                }
+                Err(_) => {
+                    eprintln!("Cannot read collection status");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::Quarantine { action } => {
             let Ok(url) = std::env::var("DATABASE_URL") else {
                 eprintln!("DATABASE_URL is required");

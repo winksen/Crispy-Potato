@@ -73,6 +73,11 @@ async fn runner_isolates_failure_and_dry_run_writes_nothing(
         .fetch_one(&pool)
         .await?;
     assert_eq!(run, ("partial".into(), 1));
+    let state: Vec<(String, bool, bool)> = sqlx::query_as("SELECT entity_id,last_success IS NOT NULL,last_error IS NOT NULL FROM source_entity_state ORDER BY entity_id").fetch_all(&pool).await?;
+    assert_eq!(
+        state,
+        vec![("react".into(), false, true), ("rust".into(), true, false)]
+    );
     let observation: (f64,) = sqlx::query_as("SELECT value FROM observations")
         .fetch_one(&pool)
         .await?;

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE source_entity_state SET last_error=$3 WHERE entity_id=$1 AND source_id=$2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "8e7e8bb3790cd96d621a93bc21f1483846650dc2e90f15f8035c3e7643babd14"
+}

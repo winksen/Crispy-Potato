@@ -6,6 +6,15 @@ use sqlx::postgres::PgPoolOptions;
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
 
+/// The API must use its separate read-only credential, never the writer URL.
+pub async fn connect_reader() -> Result<PgPool, String> {
+    let url = std::env::var("API_DATABASE_URL")
+        .map_err(|_| "API_DATABASE_URL is required".to_string())?;
+    connect(&url)
+        .await
+        .map_err(|_| "Cannot connect to the reader database".to_string())
+}
+
 pub async fn connect(url: &str) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
         .max_connections(5)

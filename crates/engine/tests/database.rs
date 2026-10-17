@@ -2,6 +2,54 @@ use engine::db;
 use sqlx::PgPool;
 
 #[sqlx::test(migrations = "./migrations")]
+async fn database_roles_enforce_least_privilege(
+    pool: PgPool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    sqlx::raw_sql(include_str!("../../../scripts/db/roles.sql"))
+        .execute(&pool)
+        .await?;
+    let mut reader = pool.acquire().await?;
+    sqlx::query("SET ROLE cp_reader")
+        .execute(&mut *reader)
+        .await?;
+    sqlx::query("SELECT * FROM entities")
+        .fetch_all(&mut *reader)
+        .await?;
+    let denied = sqlx::query("INSERT INTO meta VALUES ('forbidden','value')")
+        .execute(&mut *reader)
+        .await
+        .unwrap_err();
+    assert_eq!(
+        denied.as_database_error().and_then(|e| e.code()).as_deref(),
+        Some("42501")
+    );
+    sqlx::query("RESET ROLE").execute(&mut *reader).await?;
+    let mut writer = pool.acquire().await?;
+    sqlx::query("SET ROLE cp_writer")
+        .execute(&mut *writer)
+        .await?;
+    sqlx::query("INSERT INTO meta VALUES ('allowed','value')")
+        .execute(&mut *writer)
+        .await?;
+    for statement in [
+        "CREATE TABLE forbidden (id integer)",
+        "CREATE TEMP TABLE forbidden (id integer)",
+        "DELETE FROM _sqlx_migrations",
+    ] {
+        let denied = sqlx::query(statement)
+            .execute(&mut *writer)
+            .await
+            .unwrap_err();
+        assert_eq!(
+            denied.as_database_error().and_then(|e| e.code()).as_deref(),
+            Some("42501")
+        );
+    }
+    sqlx::query("RESET ROLE").execute(&mut *writer).await?;
+    Ok(())
+}
+
+#[sqlx::test(migrations = "./migrations")]
 async fn observation_import_updates_instead_of_duplicating(
     pool: PgPool,
 ) -> Result<(), Box<dyn std::error::Error>> {

@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.23 (2026-10-17)
+
+Separate reader, writer and migration privileges.
+
+### Added
+- **Database roles.** Idempotent owner-run roles.sql creates cp_reader and cp_writer, grants only required table and sequence permissions, denies DDL and migration-history edits, and introduces API_DATABASE_URL without a writer fallback
+
+### Not done
+- cargo fmt, clippy, test (49 tests), validate and schema --check pass; Postgres role tests deny reader writes and writer DDL; GitHub CI awaits a push
+
+### Upgrading
+- Apply scripts/db/roles.sql as the migration owner, set role passwords with psql and use separate reader/writer URLs.
+
 ## V0.1.22 (2026-10-17)
 
 SQL checked at compile time, with offline builds.

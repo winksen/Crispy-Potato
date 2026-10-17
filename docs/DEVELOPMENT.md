@@ -28,6 +28,7 @@ Every new application setting must be documented here when introduced.
 | `POSTGRES_PASSWORD` | Compose / Postgres image | Required; local database owner's password |
 | `POSTGRES_PORT` | Compose | `5432`; localhost port published for Postgres |
 | `DATABASE_URL` | CLI / sqlx tests | Required for database commands; Postgres connection URL; use owner credentials for migrations and a disposable local owner database for tests |
+| `API_DATABASE_URL` | API reader connection | Required for reader connections; use `cp_reader`, never the writer or owner; no fallback |
 | `SQLX_OFFLINE` | sqlx macros | `true` in `.cargo/config.toml`; builds use committed `.sqlx/` metadata. Set `false` only when preparing/checking against a migrated database |
 
 The container's user and database are fixed as `cp_owner` and `crispy_potato`. Content-only commands need no database.
@@ -55,3 +56,9 @@ Remove-Item Env:SQLX_OFFLINE
 ```
 
 Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no database. CI checks metadata against a fresh migrated Postgres service; a bad column fails macro expansion.
+
+## Database roles (V0.1.23)
+
+After owner migrations, run `Get-Content scripts/db/roles.sql -Raw | docker compose exec -T db psql -U cp_owner -d crispy_potato -v ON_ERROR_STOP=1`. This idempotent script provisions `cp_reader` (SELECT) and `cp_writer` (SELECT/INSERT/UPDATE/DELETE and sequences), denies schema creation and temporary tables, and protects migration history. Run it in every database as the same owner that runs migrations so default privileges apply to future tables.
+
+In the owner's interactive psql shell, use `\password cp_reader` and `\password cp_writer`. Set `DATABASE_URL` to the writer for sync/collection; `API_DATABASE_URL` to the reader for API access. Keep owner credentials only for migrations and isolated tests. Roles are cluster-wide and must not own objects or inherit other roles. The integration test switches dedicated connections into each role, checks reader SELECT and writer INSERT, and verifies permission-denied errors for reader writes, writer DDL and migration-history changes.

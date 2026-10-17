@@ -64,6 +64,7 @@ jobs:
       - name: Check SQL metadata
         run: |
           cargo sqlx migrate run --source crates/engine/migrations
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/db/roles.sql
           cargo sqlx prepare --check --workspace -- --all-targets
         env:
           SQLX_OFFLINE: 'false'

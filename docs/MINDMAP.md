@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.22` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.23` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
 
 ---
 
@@ -55,6 +55,7 @@ mindmap
     Security
       Threat model with 24 threats
       Untrusted content limits
+      Reader and writer database roles
       Private vulnerability reports
     Quality
       Content and Postgres integration tests
@@ -150,7 +151,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 48 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
+| Tests | `cargo test` | 49 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
@@ -200,3 +201,9 @@ Checks: cargo fmt, clippy, test (48 tests), validate, schema --check and cargo d
 **Checked queries.** Application SQL uses sqlx macros, .sqlx metadata is committed, SQLX_OFFLINE defaults to true and CI checks metadata against migrated Postgres
 
 Checks: cargo fmt, clippy, test (48 tests), validate, schema --check, sqlx prepare --check and offline cargo build pass; a deliberately misspelled column fails compilation; GitHub CI awaits a push
+
+### V0.1.23 — Separate reader, writer and migration privileges.
+
+**Database roles.** Idempotent owner-run roles.sql creates cp_reader and cp_writer, grants only required table and sequence permissions, denies DDL and migration-history edits, and introduces API_DATABASE_URL without a writer fallback
+
+Checks: cargo fmt, clippy, test (49 tests), validate and schema --check pass; Postgres role tests deny reader writes and writer DDL; GitHub CI awaits a push

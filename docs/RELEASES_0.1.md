@@ -1,9 +1,9 @@
 # Crispy-Potato releases: 0.1 → 0.2
 
-> **Line:** `V0.1.2` to `V0.2.0` *Public preview* · **Current:** `V0.1.1` (2026-10-17) · **Next:** `V0.1.2`
-> **Related:** [Architecture](architecture.md) · [Data model](data-model.md) · [Changelog](../CHANGELOG.md) (created in V0.1.2)
+> **Line:** `V0.1.2` to `V0.2.0` *Public preview* · **Current:** `V0.1.2` (2026-10-17) · **Next:** `V0.1.3`
+> **Related:** [Architecture](architecture.md) · [Data model](data-model.md) · [Mindmap](MINDMAP.md) · [Changelog](../CHANGELOG.md) · [CLAUDE.md](../CLAUDE.md)
 
-Every release of the 0.1 line, shipped and planned, one row each. **One change per release, one commit per release.** Each row is a feature, an enhancement, a fix, a security change or an update (docs, process, content, release), small enough to build and review alone. The rows are proposals until the decisions below are agreed.
+Every release of the 0.1 line, shipped and planned, one row each. **One change per release, one commit per release.** Each row is a feature, an enhancement, a fix, a security change or an update (docs, process, content, release), small enough to build and review alone. The planned rows follow the decisions below, agreed in V0.1.2.
 
 **Type:** ✨ Feature · 🔧 Enhancement · 🐞 Fix · 🔒 Security · 📘 Update (docs, process, content, dependencies, release)
 **Side:** Back (Rust crates, database, content) · Front (web app) · Both
@@ -28,9 +28,11 @@ Not in 0.2.0: full decision guides, the AI assistant, libraries as an entity kin
 
 ---
 
-## Decisions to agree before implementation
+## Decisions
 
-| # | Decision | Recommendation | Affects |
+Agreed in V0.1.2 as recommended. Changing one later is a row of its own, with the rows it affects updated.
+
+| # | Decision | Agreed | Affects |
 |---|---|---|---|
 | D1 | Licenses | Code under MIT OR Apache-2.0 (the Rust convention); content under CC BY-SA 4.0 | V0.1.3, V0.1.5, V0.1.97 |
 | D2 | Web framework | React Router v7 in framework mode: SSR with loaders that call the Rust API, Vite, no React Server Components (so none of the RSC vulnerabilities found in 2025 apply), runs on any Node host. The alternative is Next.js | V0.1.95 onward |
@@ -46,7 +48,7 @@ Not in 0.2.0: full decision guides, the AI assistant, libraries as an entity kin
 
 ## How each release is made
 
-These rules are written for the implementer (Sonnet). V0.1.2 copies them into `CLAUDE.md`.
+These rules are written for the implementer (Sonnet). [CLAUDE.md](../CLAUDE.md) holds the same rules since V0.1.2; a change to one is made to both.
 
 1. **One row, one commit.** Work in version order. Before starting a row, read it, the rows in its *Needs* column, [architecture.md](architecture.md) and [data-model.md](data-model.md).
 2. **Stay inside the row.** If a row needs a decision that isn't listed, stop and ask. Don't widen a row silently. If it turns out too big, ship its core, add a new row right after it for the rest, and renumber the planned rows that follow.
@@ -67,22 +69,23 @@ These rules are written for the implementer (Sonnet). V0.1.2 copies them into `C
    ### Upgrading
    - What to run or change, or "Nothing to do."
    ```
-6. **This index.** Every release sets its row to ✅ with the date and makes *What changes* describe what was built.
-7. **Checks.** Run the checks for the side you touched. Back: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, `cargo validate`. Front: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Also run anything the row's *Done when* names. Report what ran and what didn't; never claim a check that didn't run.
-8. **Security rules that always apply:**
+6. **This index.** Every release sets its row to ✅ with the date, makes *What changes* describe what was built, and moves *Current* and *Next* in the header.
+7. **Mindmap.** Every release updates [MINDMAP.md](MINDMAP.md): its scope line names the release, and the nodes and sections the release touched describe what is now built.
+8. **Checks.** Run the checks for the side you touched. Back: `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, `cargo validate`. Front: `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`. Also run anything the row's *Done when* names. Report what ran and what didn't; never claim a check that didn't run.
+9. **Security rules that always apply:**
    - content files and source responses are untrusted input;
    - SQL only goes through sqlx bindings;
    - secrets never reach logs, URLs, error bodies or the browser bundle;
    - new dependencies must pass `cargo deny` and the web license check, and are named in the changelog.
-9. **Commit message.** Same format as RepoMemo: the title is `Update V0.1.N`, then one bullet per notable change in plain prose, without trailing periods. The second-to-last bullet says what was checked and what wasn't. The last bullet lists the documents updated.
-   ```
-   Update V0.1.N
+10. **Commit message.** Same format as RepoMemo: the title is `Update V0.1.N`, then one bullet per notable change in plain prose, without trailing periods. The second-to-last bullet says what was checked and what wasn't. The last bullet lists the documents updated.
+    ```
+    Update V0.1.N
 
-   - <what changed>
-   - <what changed>
-   - <checks that ran, with counts; what was not run and why>
-   - Updated changelog and release index
-   ```
+    - <what changed>
+    - <what changed>
+    - <checks that ran, with counts; what was not run and why>
+    - Updated changelog, mindmap and release index
+    ```
 
 **Content rows** (track E) are done when:
 - the files validate;
@@ -123,7 +126,7 @@ Tracks run in letter order. The backend is built through a frozen API first (A�
 | Version (tag) | Status | Side | Track | Type | Area | What changes | Done when | Needs |
 |---|---|---|---|---|---|---|---|---|
 | **V0.1.1** | ✅ 2026-10-17 | Back | A. Foundations | ✨ Feature | Model, validation | Cargo workspace (model, engine, cli), the entity types, `cargo validate` with every problem reported at once, Rust and React content, vocabularies, `planned.yaml`, architecture and data model docs | 15 tests, fmt, clippy and validate pass | — |
-| **V0.1.2** | 🔜 | Back | A. Foundations | 📘 Update | Repository | This release index committed with the agreed decisions; `CHANGELOG.md` in the format above, with a V0.1.1 entry written after the fact; `CLAUDE.md` holding the release rules on this page; `.gitattributes` (`* text=auto eol=lf`, binary types marked) and `.editorconfig`; existing files renormalized | `git add --renormalize .` leaves nothing to commit and commits print no CRLF warnings; CLAUDE.md links this index | — |
+| **V0.1.2** | ✅ 2026-10-17 | Back | A. Foundations | 📘 Update | Repository | This index with decisions D1–D9 agreed and the mindmap added to its rules; `CHANGELOG.md` in the format above, with a V0.1.1 entry written after the fact; `CLAUDE.md` holding the release rules on this page; `docs/MINDMAP.md`; `.gitattributes` (`* text=auto eol=lf`, images, fonts and archives binary) and `.editorconfig`; renormalizing changed no file; crate versions at 0.1.2 | `git add --renormalize .` leaves nothing to commit and commits print no CRLF warnings; CLAUDE.md links this index | — |
 | **V0.1.3** | 🔜 | Back | A. Foundations | 📘 Update | Licensing | `LICENSE-MIT` and `LICENSE-APACHE` for code, `license` set in the workspace manifest; `content/LICENSE` with CC BY-SA 4.0; a License section in the README saying which applies where | Every crate inherits the license; the README names both | D1 |
 | **V0.1.4** | 🔜 | Back | A. Foundations | 📘 Update | CI | GitHub Actions `ci.yml` on push and pull_request: fmt check, clippy with `-D warnings`, test, validate; `permissions: contents: read`; third-party actions pinned by commit SHA; a Rust build cache; never `pull_request_target` (content PRs are untrusted) | The workflow passes on main; a PR with a broken content file fails at the validate step | — |
 | **V0.1.5** | 🔜 | Back | A. Foundations | 🔒 Security | Supply chain | `deny.toml`: RustSec advisories, license allow-list matching D1, crates.io as the only source, duplicate versions warned; a `cargo deny check` CI job; `rust-toolchain.toml` pinning stable with rustfmt and clippy; Dependabot for Cargo and GitHub Actions, weekly | `cargo deny check` passes in CI; a crate with a disallowed license fails it | V0.1.4, D1 |

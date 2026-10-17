@@ -1,0 +1,21 @@
+# Every text file is stored and checked out with LF line endings, whatever the
+# OS or the core.autocrlf setting.
+* text=auto eol=lf
+
+# Binary files: never converted, never diffed as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.gz binary
+*.tgz binary
+*.zst binary

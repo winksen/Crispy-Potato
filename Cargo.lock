@@ -129,7 +129,7 @@ checksum = "1c133bc6a41be0d194c306b5506d15e6feeea7b1d6604bd3f8310dfb2ca96486"
 
 [[package]]
 name = "cli"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "clap",
  "engine",
@@ -184,7 +184,7 @@ dependencies = [
 
 [[package]]
 name = "engine"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "model",
  "serde",
@@ -404,7 +404,7 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "model"
-version = "0.1.0"
+version = "0.1.2"
 dependencies = [
  "indexmap",
  "serde",

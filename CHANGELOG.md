@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.13 (2026-10-17)
+
+Every entity says when to choose it, in 2 to 4 short statements that compare pages will show side by side.
+
+### Added
+- **`choose_when`**, a required list of 2 to 4 statements, each completing the sentence "Choose <name> when …" and at most 140 characters. Validation reports a list that is too short or too long, an empty or repeated statement, and a statement over the limit with its length. Compare pages will show them side by side (comparison rule 5 in the data model).
+- **Rust and React** have three statements each: for Rust, C-level control with memory and data-race safety, a fast single binary, and a team ready for the learning curve; for React, the widest ecosystem for interactive web interfaces, one component model on the web and mobile, and freedom to pick libraries or a framework on top.
+- **The data model** describes the field, how to write a statement, and the new rule; the JSON Schemas list it as required.
+- **A test** for one, five, an over-long and a missing list, and four statements with one at exactly 140 characters.
+
+### Upgrading
+- Every entity file needs a `choose_when` list now; validation names the files that lack one. Run `cargo schema` if you have local schema changes.
+
 ## V0.1.12 (2026-10-17)
 
 Editors complete fields and allowed values in entity files and flag mistakes while you type, from JSON Schemas generated from the model.

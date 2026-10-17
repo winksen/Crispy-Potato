@@ -76,6 +76,7 @@ When you add a file, remove its id from `planned.yaml`. Validation fails while a
 | `traits` | yes | depends on the kind (see below) |
 | `domains` | yes | how well it fits each kind of project, with a note when the fit isn't obvious |
 | `strengths`, `weaknesses` | yes | 2–6 each; `title`, `detail`, optional `sources` |
+| `choose_when` | yes | 2–4 situations, each completing "Choose <name> when …", at most 140 characters (see below) |
 | `relations` | no | typed links to other entities |
 | `timeline` | no | milestones that aren't releases (releases are collected); `date`, `title`, optional `url` |
 | `learning` | yes | `curve` plus at least one resource |
@@ -84,6 +85,18 @@ When you add a file, remove its id from `planned.yaml`. Validation fails while a
 | `overrides` | no | corrections to collected facts, each with a `reason` |
 
 Dates may be a year, a month or a day: `2013`, `2013-05` or `2015-05-15`. The year must be from 1940 to next year, and `timeline` milestones are listed in date order (a year sorts before the months in it).
+
+### `choose_when`
+
+Each statement completes the sentence "Choose Rust when …", so it starts in lower case and leaves out those words:
+
+```yaml
+choose_when:
+  - you need the performance and control of C or C++ and want the compiler to rule out memory errors and data races
+  - you are building a command-line tool, a network service or a WebAssembly module that should ship as one fast binary
+```
+
+Write 2 to 4, each at most 140 characters. They describe situations in which a reader should pick this entity over its alternatives, rather than repeating its strengths. Compare pages show them side by side (comparison rule 5).
 
 ### `ids`: the link to automation
 
@@ -234,7 +247,7 @@ Raw numbers mislead when compared carelessly, so the engine enforces these rules
 2. **Same source only.** A metric is shown side by side only when every entity has it from the same source. npm downloads and PyPI downloads are never placed next to each other.
 3. **Missing is not zero.** Some ecosystems publish no download counts at all (Maven Central, for example). The UI shows "not published", not an empty bar.
 4. **Trends travel better than totals.** Where totals can't be compared, the engine compares 12-month growth instead.
-5. **No single overall score.** A comparison shows the signals plus curated "pick A if…, pick B if…" guidance.
+5. **No single overall score.** A comparison shows the signals plus each entity's curated `choose_when` statements, side by side.
 
 ## Validation
 
@@ -247,6 +260,7 @@ Run `cargo validate` from the repository root. It reports every problem at once,
 - **References:** every relation and every `traits.languages` entry points to an entity with a file or one listed in `planned.yaml`, following the rules in the relations table. Nothing refers to itself.
 - **Style:**
   - `strengths` and `weaknesses` have 2–6 entries each;
+  - `choose_when` has 2–4 statements of at most 140 characters;
   - the tagline is at most 100 characters;
   - `possible` and `poor` fits have a note;
   - no value is listed twice;

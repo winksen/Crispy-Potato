@@ -51,6 +51,11 @@ weaknesses:
   - title: Shifting best practices
     detail: Recommended patterns have changed from class components to hooks to server components, so older tutorials can mislead.
 
+choose_when:
+  - you are building an interactive web interface and want the widest choice of libraries, tools and developers who know it
+  - you want the same component model on the web and in mobile apps through React Native
+  - you prefer to pick your own routing, data and styling libraries, or to adopt a framework such as Next.js on top
+
 relations:
   alternatives: [vue, angular, svelte, solidjs]
   often_with: [typescript]

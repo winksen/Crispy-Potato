@@ -72,6 +72,9 @@ weaknesses:
     detail: The first weakness.
   - title: Two
     detail: The second weakness.
+choose_when:
+  - you need a language that only exists in tests.
+  - you want to check the validator.
 learning:
   curve: gentle
   resources:
@@ -584,5 +587,52 @@ fn ids_must_not_contain_vs_as_a_word() {
     assert_eq!(
         problems("", &[("languages/canvas.yaml", &source)]),
         Vec::<String>::new()
+    );
+}
+
+#[test]
+fn choose_when_has_two_to_four_short_statements() {
+    let statements = |list: &[&str]| {
+        let lines: Vec<String> = list.iter().map(|s| format!("  - {s}\n")).collect();
+        let start = LANGUAGE.find("choose_when:\n").unwrap();
+        let end = LANGUAGE.find("learning:\n").unwrap();
+        format!(
+            "{}choose_when:\n{}{}",
+            &LANGUAGE[..start],
+            lines.concat(),
+            &LANGUAGE[end..]
+        )
+    };
+
+    let one = statements(&["you need one reason."]);
+    assert_problem(
+        &problems("", &[("languages/testlang.yaml", &one)]),
+        "choose_when: has 1 entries; write between 2 and 4",
+    );
+
+    let five = statements(&["one.", "two.", "three.", "four.", "five."]);
+    assert_problem(
+        &problems("", &[("languages/testlang.yaml", &five)]),
+        "choose_when: has 5 entries; write between 2 and 4",
+    );
+
+    let long = "a".repeat(141);
+    let too_long = statements(&["you need a short reason.", &long]);
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &too_long)]),
+        ["choose_when[1]: is 141 characters; the limit is 140"]
+    );
+
+    let at_limit = "a".repeat(140);
+    let four = statements(&["one.", "two.", "three.", &at_limit]);
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &four)]),
+        Vec::<String>::new()
+    );
+
+    let missing = statements(&[]).replace("choose_when:\n", "");
+    assert_problem(
+        &problems("", &[("languages/testlang.yaml", &missing)]),
+        "missing field `choose_when`",
     );
 }

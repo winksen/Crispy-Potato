@@ -58,6 +58,9 @@ pub struct Entity<T = Traits> {
     pub domains: Vec<DomainFit>,
     pub strengths: Vec<Point>,
     pub weaknesses: Vec<Point>,
+    /// 2–4 situations that each complete the sentence "Choose <name> when …",
+    /// shown side by side on compare pages.
+    pub choose_when: Vec<String>,
     #[serde(default)]
     pub relations: Relations,
     #[serde(default)]
@@ -87,6 +90,7 @@ impl<T> Entity<T> {
             domains: self.domains,
             strengths: self.strengths,
             weaknesses: self.weaknesses,
+            choose_when: self.choose_when,
             relations: self.relations,
             timeline: self.timeline,
             learning: self.learning,

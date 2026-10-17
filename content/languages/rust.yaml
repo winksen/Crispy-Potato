@@ -57,6 +57,11 @@ weaknesses:
   - title: Slow compilation
     detail: Large projects compile noticeably slower than comparable Go or C projects.
 
+choose_when:
+  - you need the performance and control of C or C++ and want the compiler to rule out memory errors and data races
+  - you are building a command-line tool, a network service or a WebAssembly module that should ship as one fast binary
+  - your team can take on a steep learning curve in exchange for catching more bugs before the code runs
+
 relations:
   alternatives: [cpp, c, go]
 

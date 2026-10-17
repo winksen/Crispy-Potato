@@ -609,6 +609,13 @@
       },
       "type": "array"
     },
+    "choose_when": {
+      "description": "2–4 situations that each complete the sentence \"Choose <name> when …\",\nshown side by side on compare pages.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
     "domains": {
       "items": {
         "$ref": "#/definitions/DomainFit"
@@ -718,6 +725,7 @@
     "domains",
     "strengths",
     "weaknesses",
+    "choose_when",
     "learning"
   ],
   "title": "A framework in content/frameworks/",

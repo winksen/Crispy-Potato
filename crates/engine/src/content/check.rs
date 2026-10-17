@@ -14,6 +14,8 @@ use super::Diags;
 
 const TAGLINE_MAX: usize = 100;
 const POINTS: RangeInclusive<usize> = 2..=6;
+const CHOOSE_WHEN: RangeInclusive<usize> = 2..=4;
+const CHOOSE_WHEN_MAX: usize = 140;
 const SLUG_HINT: &str = "use lowercase letters, digits and single hyphens, like spring-boot";
 const VS_HINT: &str = "compare URLs use it to separate ids, as in /compare/go-vs-rust";
 /// No programming language or framework predates the first programmable computers.
@@ -187,6 +189,7 @@ fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
     check_domains(e, ctx, r);
     check_points(r, "strengths", &e.strengths);
     check_points(r, "weaknesses", &e.weaknesses);
+    check_choose_when(r, &e.choose_when);
     check_relations(e, ctx, r);
 
     for (i, milestone) in e.timeline.iter().enumerate() {
@@ -344,6 +347,31 @@ fn check_domains(e: &Entity, ctx: &Context, r: &mut Report) {
                 "a note is required when fit is possible or poor",
             ),
             None => {}
+        }
+    }
+}
+
+fn check_choose_when(r: &mut Report, statements: &[String]) {
+    if !CHOOSE_WHEN.contains(&statements.len()) {
+        r.error(
+            "choose_when",
+            format!(
+                "has {} entries; write between {} and {}",
+                statements.len(),
+                CHOOSE_WHEN.start(),
+                CHOOSE_WHEN.end()
+            ),
+        );
+    }
+    for (i, statement) in unique(r, "choose_when", statements) {
+        let field = format!("choose_when[{i}]");
+        required_text(r, &field, statement);
+        let len = statement.chars().count();
+        if len > CHOOSE_WHEN_MAX {
+            r.error(
+                field,
+                format!("is {len} characters; the limit is {CHOOSE_WHEN_MAX}"),
+            );
         }
     }
 }

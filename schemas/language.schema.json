@@ -1,0 +1,762 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "additionalProperties": false,
+  "definitions": {
+    "DomainFit": {
+      "additionalProperties": false,
+      "description": "How well an entity suits one kind of project.",
+      "properties": {
+        "domain": {
+          "description": "A value from `content/vocab/domains.yaml`.",
+          "enum": [
+            "web-frontend",
+            "web-backend",
+            "mobile",
+            "desktop",
+            "systems",
+            "embedded",
+            "cli",
+            "scripting",
+            "devops",
+            "data-science",
+            "machine-learning",
+            "scientific",
+            "games"
+          ],
+          "enumDescriptions": [
+            "Web frontend: User interfaces that run in the browser.",
+            "Web backend: Servers and APIs behind websites and apps.",
+            "Mobile: Apps for iOS and Android.",
+            "Desktop: Applications for Windows, macOS and Linux.",
+            "Systems: Operating systems, databases, compilers and other low-level software.",
+            "Embedded: Firmware and software for microcontrollers and other devices.",
+            "Command-line tools: Programs used from a terminal.",
+            "Scripting and automation: Small programs that glue tools together or automate tasks.",
+            "DevOps and infrastructure: Deployment, cloud infrastructure and operations tooling.",
+            "Data science: Analyzing, cleaning and visualizing data.",
+            "Machine learning: Training and serving models.",
+            "Scientific computing: Simulation and numerical work in research and engineering.",
+            "Games: Game engines and the games built with them."
+          ],
+          "type": "string"
+        },
+        "fit": {
+          "$ref": "#/definitions/Fit"
+        },
+        "note": {
+          "description": "Required when `fit` is `possible` or `poor`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "domain",
+        "fit"
+      ],
+      "type": "object"
+    },
+    "ExternalIds": {
+      "additionalProperties": false,
+      "description": "How the engine finds this entity in each external source.",
+      "properties": {
+        "crates": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "endoflife": {
+          "description": "The endoflife.date product slug.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "github": {
+          "description": "`owner/repo`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "hex": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "maven": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "npm": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "nuget": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "packagist": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pub": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "pypi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rubygems": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "so_survey": {
+          "description": "The name used in the Stack Overflow Developer Survey.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stackoverflow_tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "wikidata": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "Fit": {
+      "enum": [
+        "excellent",
+        "good",
+        "possible",
+        "poor"
+      ],
+      "type": "string"
+    },
+    "Kind": {
+      "description": "What an entity is on the site. Each kind has its own folder under `content/`.",
+      "enum": [
+        "language",
+        "framework",
+        "runtime"
+      ],
+      "type": "string"
+    },
+    "LanguageTraits": {
+      "additionalProperties": false,
+      "description": "Every value comes from `content/vocab/traits.yaml`.",
+      "properties": {
+        "concurrency": {
+          "items": {
+            "enum": [
+              "threads",
+              "async",
+              "actors",
+              "green-threads",
+              "event-loop",
+              "csp",
+              "coroutines"
+            ],
+            "enumDescriptions": [
+              "OS threads: Work runs on operating-system threads.",
+              "Async/await: Tasks pause while waiting for I/O without blocking a thread.",
+              "Actors: Isolated processes communicate only by sending messages.",
+              "Green threads: The runtime schedules many lightweight threads onto fewer OS threads.",
+              "Event loop: A single thread handles events and callbacks in turn.",
+              "Channels (CSP): Concurrent tasks communicate over channels.",
+              "Coroutines: Functions can suspend and resume cooperatively."
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "execution": {
+          "items": {
+            "enum": [
+              "compiled-native",
+              "bytecode-vm",
+              "interpreted",
+              "jit",
+              "transpiled"
+            ],
+            "enumDescriptions": [
+              "Compiled to native code: Compiled ahead of time to machine code.",
+              "Bytecode VM: Compiled to bytecode that a virtual machine runs.",
+              "Interpreted: Source code is run directly by an interpreter.",
+              "JIT-compiled: Frequently run code is compiled to machine code while the program runs.",
+              "Transpiled: Compiled to another high-level language, such as JavaScript."
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "memory": {
+          "items": {
+            "enum": [
+              "gc",
+              "ownership",
+              "manual",
+              "arc"
+            ],
+            "enumDescriptions": [
+              "Garbage collected: A runtime frees memory that is no longer reachable.",
+              "Ownership: The compiler tracks which code owns each value and frees it when the owner goes out of scope.",
+              "Manual: The programmer allocates and frees memory explicitly.",
+              "Reference counting: Each value counts its references and is freed when the count reaches zero."
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "paradigms": {
+          "items": {
+            "enum": [
+              "imperative",
+              "procedural",
+              "object-oriented",
+              "functional",
+              "generic",
+              "concurrent",
+              "declarative"
+            ],
+            "enumDescriptions": [
+              "Imperative: Programs are sequences of statements that change state.",
+              "Procedural: Code is organized into procedures that operate on data.",
+              "Object-oriented: Code is organized into objects that bundle data and behavior.",
+              "Functional: Programs are built from functions, favoring immutable data and expressions.",
+              "Generic: Code can be written once and used with many types.",
+              "Concurrent: The language has built-in constructs for running work concurrently.",
+              "Declarative: Programs describe the result rather than the steps to reach it."
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "targets": {
+          "items": {
+            "enum": [
+              "linux",
+              "macos",
+              "windows",
+              "browser",
+              "wasm",
+              "ios",
+              "android",
+              "embedded"
+            ],
+            "enumDescriptions": [
+              "Linux: Runs on Linux.",
+              "macOS: Runs on macOS.",
+              "Windows: Runs on Windows.",
+              "Browser: Runs in web browsers, natively or by compiling to JavaScript.",
+              "WebAssembly: Compiles to WebAssembly.",
+              "iOS: Runs on iPhone and iPad.",
+              "Android: Runs on Android devices.",
+              "Embedded: Runs on microcontrollers, often without an operating system."
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "typing": {
+          "items": {
+            "enum": [
+              "static",
+              "dynamic",
+              "strong",
+              "weak",
+              "inferred",
+              "gradual"
+            ],
+            "enumDescriptions": [
+              "Static: Types are checked before the program runs.",
+              "Dynamic: Types are checked while the program runs.",
+              "Strong: Values are not silently converted between unrelated types.",
+              "Weak: Values are converted between types implicitly.",
+              "Inferred: The compiler works out most types without annotations.",
+              "Gradual: Type annotations are optional and can be added over time."
+            ],
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "typing",
+        "memory",
+        "execution",
+        "paradigms",
+        "concurrency",
+        "targets"
+      ],
+      "type": "object"
+    },
+    "Learning": {
+      "additionalProperties": false,
+      "properties": {
+        "curve": {
+          "$ref": "#/definitions/LearningCurve"
+        },
+        "resources": {
+          "items": {
+            "$ref": "#/definitions/Resource"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "curve",
+        "resources"
+      ],
+      "type": "object"
+    },
+    "LearningCurve": {
+      "enum": [
+        "gentle",
+        "moderate",
+        "steep"
+      ],
+      "type": "string"
+    },
+    "Links": {
+      "additionalProperties": false,
+      "properties": {
+        "docs": {
+          "format": "uri",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repo": {
+          "format": "uri",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "website": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "website"
+      ],
+      "type": "object"
+    },
+    "Milestone": {
+      "additionalProperties": false,
+      "description": "A milestone that is not a release. Releases are collected automatically.",
+      "properties": {
+        "date": {
+          "$ref": "#/definitions/PartialDate"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "date",
+        "title"
+      ],
+      "type": "object"
+    },
+    "NotableUser": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "source": {
+          "format": "uri",
+          "type": "string"
+        },
+        "what": {
+          "description": "What they use it for.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "what",
+        "source"
+      ],
+      "type": "object"
+    },
+    "Override": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/definitions/PartialDate"
+        }
+      },
+      "required": [
+        "value",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "Override2": {
+      "additionalProperties": false,
+      "properties": {
+        "reason": {
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "Overrides": {
+      "additionalProperties": false,
+      "description": "Corrections to facts the engine collects, for when a source is wrong.",
+      "properties": {
+        "designers": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Override2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "developer": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Override2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "inception": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Override"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "influenced_by": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Override2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "license": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Override2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "written_in": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Override2"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "PartialDate": {
+      "description": "A date known to the year, the month or the day: 2006, 2013-05 or 2015-05-15.",
+      "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$",
+      "type": [
+        "string",
+        "integer"
+      ]
+    },
+    "Point": {
+      "additionalProperties": false,
+      "description": "A strength or a weakness.",
+      "properties": {
+        "detail": {
+          "type": "string"
+        },
+        "sources": {
+          "default": [],
+          "items": {
+            "format": "uri",
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "detail"
+      ],
+      "type": "object"
+    },
+    "Relations": {
+      "additionalProperties": false,
+      "description": "Links to other entities, by id. Each relation is written on one side only;\nthe engine derives the reverse direction.",
+      "properties": {
+        "alternatives": {
+          "default": [],
+          "description": "Symmetric. Must have the same kind.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "built_on": {
+          "default": [],
+          "description": "This entity is built on the target, e.g. `nextjs` → `react`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "often_with": {
+          "default": [],
+          "description": "Symmetric, e.g. `react` ↔ `typescript`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "runs_on": {
+          "default": [],
+          "description": "This entity runs on the target runtime, e.g. `express` → `nodejs`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "succeeded_by": {
+          "default": [],
+          "description": "This entity was replaced by the target, e.g. `angularjs` → `angular`.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Resource": {
+      "additionalProperties": false,
+      "properties": {
+        "free": {
+          "type": "boolean"
+        },
+        "kind": {
+          "$ref": "#/definitions/ResourceKind"
+        },
+        "title": {
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url",
+        "kind",
+        "free"
+      ],
+      "type": "object"
+    },
+    "ResourceKind": {
+      "enum": [
+        "book",
+        "course",
+        "docs",
+        "exercises",
+        "tutorial",
+        "video"
+      ],
+      "type": "string"
+    }
+  },
+  "description": "A curated entity, as written in a `content/` YAML file.\n\n`T` holds the kind-specific traits. Files are parsed as `Entity<LanguageTraits>`,\n`Entity<FrameworkTraits>` and so on, then converted to `Entity<Traits>`.",
+  "properties": {
+    "aliases": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "domains": {
+      "items": {
+        "$ref": "#/definitions/DomainFit"
+      },
+      "type": "array"
+    },
+    "id": {
+      "type": "string"
+    },
+    "ids": {
+      "$ref": "#/definitions/ExternalIds"
+    },
+    "kind": {
+      "const": "language"
+    },
+    "learning": {
+      "$ref": "#/definitions/Learning"
+    },
+    "links": {
+      "$ref": "#/definitions/Links"
+    },
+    "name": {
+      "type": "string"
+    },
+    "notable_users": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/NotableUser"
+      },
+      "type": "array"
+    },
+    "overrides": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Overrides"
+        }
+      ],
+      "default": {
+        "designers": null,
+        "developer": null,
+        "inception": null,
+        "influenced_by": null,
+        "license": null,
+        "written_in": null
+      }
+    },
+    "relations": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Relations"
+        }
+      ],
+      "default": {
+        "alternatives": [],
+        "built_on": [],
+        "often_with": [],
+        "runs_on": [],
+        "succeeded_by": []
+      }
+    },
+    "samples": {
+      "default": [],
+      "description": "Paths relative to `content/samples/`.",
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "strengths": {
+      "items": {
+        "$ref": "#/definitions/Point"
+      },
+      "type": "array"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "timeline": {
+      "default": [],
+      "items": {
+        "$ref": "#/definitions/Milestone"
+      },
+      "type": "array"
+    },
+    "traits": {
+      "$ref": "#/definitions/LanguageTraits"
+    },
+    "weaknesses": {
+      "items": {
+        "$ref": "#/definitions/Point"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "name",
+    "tagline",
+    "summary",
+    "links",
+    "ids",
+    "traits",
+    "domains",
+    "strengths",
+    "weaknesses",
+    "learning"
+  ],
+  "title": "A language in content/languages/",
+  "type": "object"
+}

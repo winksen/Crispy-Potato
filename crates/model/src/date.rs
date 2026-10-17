@@ -1,7 +1,9 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use schemars::{JsonSchema, Schema, SchemaGenerator, json_schema};
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
@@ -120,6 +122,21 @@ impl fmt::Display for PartialDate {
             write!(f, "-{day:02}")?;
         }
         Ok(())
+    }
+}
+
+impl JsonSchema for PartialDate {
+    fn schema_name() -> Cow<'static, str> {
+        "PartialDate".into()
+    }
+
+    fn json_schema(_: &mut SchemaGenerator) -> Schema {
+        // A year written without quotes arrives as a number.
+        json_schema!({
+            "description": "A date known to the year, the month or the day: 2006, 2013-05 or 2015-05-15.",
+            "type": ["string", "integer"],
+            "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"
+        })
     }
 }
 

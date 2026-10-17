@@ -10,5 +10,6 @@ workspace = true
 
 [dependencies]
 indexmap.workspace = true
+schemars.workspace = true
 serde.workspace = true
 url.workspace = true

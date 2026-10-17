@@ -10,8 +10,10 @@ workspace = true
 
 [dependencies]
 model.workspace = true
+schemars.workspace = true
 serde.workspace = true
 serde-saphyr.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

@@ -1,12 +1,13 @@
 use std::fmt;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::PartialDate;
 
 /// What an entity is on the site. Each kind has its own folder under `content/`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Kind {
     Language,
@@ -41,7 +42,7 @@ impl fmt::Display for Kind {
 ///
 /// `T` holds the kind-specific traits. Files are parsed as `Entity<LanguageTraits>`,
 /// `Entity<FrameworkTraits>` and so on, then converted to `Entity<Traits>`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Entity<T = Traits> {
     pub id: String,
@@ -105,7 +106,7 @@ pub enum Traits {
 }
 
 /// Every value comes from `content/vocab/traits.yaml`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct LanguageTraits {
     pub typing: Vec<String>,
@@ -116,7 +117,7 @@ pub struct LanguageTraits {
     pub targets: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct FrameworkTraits {
     /// A value from `content/vocab/domains.yaml`.
@@ -131,7 +132,7 @@ pub struct FrameworkTraits {
     pub platforms: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct RuntimeTraits {
     /// Ids of language entities.
@@ -139,7 +140,7 @@ pub struct RuntimeTraits {
     pub targets: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Links {
     pub website: Url,
@@ -148,7 +149,7 @@ pub struct Links {
 }
 
 /// How the engine finds this entity in each external source.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct ExternalIds {
     pub wikidata: Option<String>,
@@ -216,7 +217,7 @@ impl ExternalIds {
 }
 
 /// How well an entity suits one kind of project.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct DomainFit {
     /// A value from `content/vocab/domains.yaml`.
@@ -226,7 +227,7 @@ pub struct DomainFit {
     pub note: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Fit {
     Excellent,
@@ -236,7 +237,7 @@ pub enum Fit {
 }
 
 /// A strength or a weakness.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Point {
     pub title: String,
@@ -247,7 +248,7 @@ pub struct Point {
 
 /// Links to other entities, by id. Each relation is written on one side only;
 /// the engine derives the reverse direction.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Relations {
     /// Symmetric. Must have the same kind.
@@ -288,7 +289,7 @@ impl Relations {
 }
 
 /// A milestone that is not a release. Releases are collected automatically.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Milestone {
     pub date: PartialDate,
@@ -296,14 +297,14 @@ pub struct Milestone {
     pub url: Option<Url>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Learning {
     pub curve: LearningCurve,
     pub resources: Vec<Resource>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum LearningCurve {
     Gentle,
@@ -311,7 +312,7 @@ pub enum LearningCurve {
     Steep,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Resource {
     pub title: String,
@@ -320,7 +321,7 @@ pub struct Resource {
     pub free: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum ResourceKind {
     Book,
@@ -331,7 +332,7 @@ pub enum ResourceKind {
     Video,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct NotableUser {
     pub name: String,
@@ -341,7 +342,7 @@ pub struct NotableUser {
 }
 
 /// Corrections to facts the engine collects, for when a source is wrong.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Overrides {
     pub inception: Option<Override<PartialDate>>,
@@ -379,7 +380,7 @@ impl Overrides {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct Override<T> {
     pub value: T,

@@ -84,17 +84,10 @@ impl Diags<'_> {
 ///
 /// Returns every problem found rather than stopping at the first one.
 pub fn load(root: &Path) -> Result<Content, Vec<Diagnostic>> {
-    let mut loader = Loader {
-        diags: Diags {
-            root,
-            list: Vec::new(),
-        },
-        refused: HashSet::new(),
-    };
+    let mut loader = Loader::new(root);
     loader.check_tree(root);
 
-    let domains = loader.read_yaml::<Terms>(&root.join("vocab/domains.yaml"));
-    let traits = loader.read_yaml::<TraitVocab>(&root.join("vocab/traits.yaml"));
+    let (domains, traits) = loader.read_vocab();
     let planned_path = root.join("planned.yaml");
     let planned = if fs::symlink_metadata(&planned_path).is_ok() {
         loader.read_yaml::<Planned>(&planned_path)
@@ -131,6 +124,17 @@ pub fn load(root: &Path) -> Result<Content, Vec<Diagnostic>> {
         })
     } else {
         Err(diags.list)
+    }
+}
+
+/// Reads only the vocabularies in `content/vocab/`, for tools that need them
+/// while other files may still have problems.
+pub fn load_vocab(root: &Path) -> Result<Vocab, Vec<Diagnostic>> {
+    let mut loader = Loader::new(root);
+    loader.check_tree(&root.join("vocab"));
+    match loader.read_vocab() {
+        (Some(domains), Some(traits)) => Ok(Vocab { domains, traits }),
+        _ => Err(loader.diags.list),
     }
 }
 
@@ -197,7 +201,25 @@ struct Loader<'a> {
     refused: HashSet<PathBuf>,
 }
 
-impl Loader<'_> {
+impl<'a> Loader<'a> {
+    fn new(root: &'a Path) -> Self {
+        Loader {
+            diags: Diags {
+                root,
+                list: Vec::new(),
+            },
+            refused: HashSet::new(),
+        }
+    }
+
+    fn read_vocab(&mut self) -> (Option<Terms>, Option<TraitVocab>) {
+        let root = self.diags.root;
+        (
+            self.read_yaml(&root.join("vocab/domains.yaml")),
+            self.read_yaml(&root.join("vocab/traits.yaml")),
+        )
+    }
+
     /// Reports every symbolic link and every file over [`MAX_FILE_BYTES`] under
     /// `dir`, without following links.
     fn check_tree(&mut self, dir: &Path) {

@@ -42,6 +42,14 @@ content/
 
 Each entity's `kind` must match its folder.
 
+Each entity file starts with a line that points editors at its JSON Schema:
+
+```yaml
+# yaml-language-server: $schema=../../schemas/language.schema.json
+```
+
+The schemas in `schemas/` (`language`, `framework` and `runtime`) are generated from the model types by `cargo schema`, with the vocabulary values as enums, so editors complete fields and values and flag unknown fields. `cargo schema --check`, run in CI and by `cargo test`, fails when they are out of date.
+
 ### Examples
 
 - [`content/languages/rust.yaml`](../content/languages/rust.yaml)

@@ -2,6 +2,23 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.12 (2026-10-17)
+
+Editors complete fields and allowed values in entity files and flag mistakes while you type, from JSON Schemas generated from the model.
+
+### Added
+- **`cli schema`** (`cargo schema`) writes a JSON Schema per entity kind to `schemas/` (`language.schema.json`, `framework.schema.json`, `runtime.schema.json`), generated from the model types. Unknown fields are refused, `kind` is fixed to the folder's kind, and every vocabulary value (traits, domains, ecosystems) is an enum with its label and description shown next to each completion. They use JSON Schema draft-07, which the YAML language server reads.
+- **Each entity file's first line points at its schema** (`# yaml-language-server: $schema=../../schemas/language.schema.json`), so VS Code with the YAML extension, and any editor using the YAML language server, picks it up with no setup. A test checks that every entity file has the line.
+- **Stale schemas fail CI.** `cargo schema --check` writes nothing and fails when a committed schema differs from what the model and vocabularies produce; it runs as a CI step and as a test, so changing a model type or a vocabulary without regenerating fails both.
+- **`content::load_vocab`** reads only the vocabularies, so schemas can be written while other files still have problems.
+- **New dependencies**: `schemars` 1.2.2 (MIT, held a version behind the newest, released five days ago) with its `url2` feature, and `serde_json` 1.0 (MIT OR Apache-2.0). They bring `dyn-clone`, `itoa`, `ref-cast`, `serde_derive_internals` and `zmij`, all under licenses `cargo deny` allows.
+
+### Not done
+- **The editor itself was not opened.** Instead, the committed schemas were checked with a JSON Schema validator (Python `jsonschema`, draft-07): `rust.yaml` and `react.yaml` are valid, and `stars: 100`, `memory: [magic]`, `kind: framework` in a language and `ecosystem: web` are each flagged.
+
+### Upgrading
+- Install the YAML extension in VS Code (or another editor with the YAML language server) to get completions. Run `cargo schema` after changing a model type or a vocabulary, and commit the result.
+
 ## V0.1.11 (2026-10-17)
 
 The validator closes five gaps: external ids are checked against their source's format, years must be plausible, timelines must be in order, and ids can't break compare URLs.

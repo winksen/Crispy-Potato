@@ -55,6 +55,11 @@ jobs:
         if: success() || failure()
         run: cargo validate
 
+      # The committed JSON Schemas must match the model types and vocabularies.
+      - name: Schemas are up to date
+        if: success() || failure()
+        run: cargo schema --check
+
       - name: Tests
         run: cargo test --locked
 

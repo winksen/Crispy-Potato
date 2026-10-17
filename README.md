@@ -24,6 +24,8 @@ cargo validate
 
 It reports every problem with its file and field. See [docs/data-model.md](docs/data-model.md) for what each field means.
 
+Editors that use the YAML language server (VS Code with the Red Hat YAML extension, for example) complete fields and allowed values and flag mistakes as you type: each entity file's first line points at its JSON Schema in `schemas/`. After changing a model type or a vocabulary, regenerate them with `cargo schema`.
+
 ## Docs
 
 - [Mindmap](docs/MINDMAP.md): what is built

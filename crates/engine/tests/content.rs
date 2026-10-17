@@ -7,7 +7,8 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use engine::content;
+use engine::{content, schema};
+use model::Kind;
 use tempfile::TempDir;
 
 fn repo_content() -> PathBuf {
@@ -19,6 +20,25 @@ fn repository_content_is_valid() {
     if let Err(diags) = content::load(&repo_content()) {
         let report: Vec<String> = diags.iter().map(ToString::to_string).collect();
         panic!("content has problems:\n\n{}", report.join("\n\n"));
+    }
+}
+
+#[test]
+fn entity_files_point_at_their_schema() {
+    for kind in Kind::ALL {
+        let Ok(entries) = fs::read_dir(repo_content().join(kind.dir())) else {
+            continue;
+        };
+        for entry in entries {
+            let path = entry.unwrap().path();
+            let source = fs::read_to_string(&path).unwrap();
+            assert_eq!(
+                source.lines().next(),
+                Some(schema::modeline(kind).as_str()),
+                "{} must start with the line that points editors at its schema",
+                path.display()
+            );
+        }
     }
 }
 

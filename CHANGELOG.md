@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.18 (2026-10-17)
+
+A reproducible local Postgres environment.
+
+### Added
+- **Development environment.** Digest-pinned Postgres 17, a localhost port, persistent volume, health check, ignored local settings and a development guide with the settings table
+
+### Checks
+- Docker Compose startup and psql connection, cargo fmt, clippy, test (45 tests), validate and schema --check pass; GitHub CI was not run because nothing is pushed
+
+### Upgrading
+- Copy .env.example to .env, choose the password and run docker compose up -d db --wait.
+
 ## V0.1.17 (2026-10-17)
 
 A contributing guide, a pull request template and two issue forms, so contributors know the rules before they write and reviewers check the same things every time.

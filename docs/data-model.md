@@ -201,7 +201,7 @@ Every trait is a list, even when it usually has one value (`memory: [ownership]`
 - `data-science`, `machine-learning`, `scientific`
 - `games`
 
-**`fit`** is one of `excellent` | `good` | `possible` | `poor`. A `note` is required for `possible` and `poor`, and for any rating a reviewer questions.
+**`fit`** is one of `excellent` | `good` | `possible` | `poor`, following the rubric in [CONTRIBUTING.md](../CONTRIBUTING.md#rating-domain-fit). A `note` is required for `possible` and `poor`, and for any rating a reviewer questions.
 
 **`learning.curve`** is one of `gentle` | `moderate` | `steep`.
 

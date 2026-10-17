@@ -16,6 +16,8 @@ Early. The data model and content validation exist; the data collection engine, 
 
 ## Contributing content
 
+[CONTRIBUTING.md](CONTRIBUTING.md) has the whole process: adding and editing an entity, the sourcing rules, how domain fit is rated and what reviewers check.
+
 Entities are YAML files in `content/`. To start a new one, run `cargo new-entity <kind> <id>`, for example:
 
 ```bash
@@ -39,6 +41,7 @@ Editors that use the YAML language server (VS Code with the Red Hat YAML extensi
 - [Data model](docs/data-model.md)
 - [Release plan to V0.2.0](docs/RELEASES_0.1.md)
 - [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
 - [Threat model](docs/security/threat-model.md)
 
 ## Security

@@ -187,7 +187,8 @@ traits:
 #
 # A new {kind}, written by `cli new`. Replace every {todo}, delete the optional
 # lines you don't need, then run `cargo validate`: it lists the placeholders
-# left. docs/data-model.md describes every field.
+# left. docs/data-model.md describes every field, and CONTRIBUTING.md how to
+# source and word them.
 
 # The id is the page's URL and never changes.
 id: {id}
@@ -233,7 +234,7 @@ ids:
 domains:
   # One of: {domains}
   - domain: {todo}
-    # excellent, good, possible or poor.
+    # excellent, good, possible or poor, following the rubric in CONTRIBUTING.md.
     fit: {todo}
     # Required when the fit is possible or poor; otherwise optional.
     note: {todo}

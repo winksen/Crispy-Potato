@@ -1,0 +1,48 @@
+name: Report a data problem
+description: Something about an entity is wrong, out of date, unsourced or not neutral.
+title: "Data problem: <entity>"
+labels: ["data problem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Numbers come from public sources and are collected automatically, so a wrong number may be wrong at its source too; say where you saw it. Security problems go through [SECURITY.md](https://github.com/winksen/Crispy-Potato/blob/main/SECURITY.md), not here.
+  - type: input
+    id: entity
+    attributes:
+      label: Entity
+      description: Its id, as in the page's address.
+      placeholder: rust
+    validations:
+      required: true
+  - type: input
+    id: page
+    attributes:
+      label: Page
+      description: The address of the page, if the problem is on the website.
+      placeholder: https://…/languages/rust
+  - type: dropdown
+    id: problem
+    attributes:
+      label: Kind of problem
+      options:
+        - A fact is wrong (a date, a designer, a license, a relation)
+        - A number is wrong or out of date
+        - A link is broken or points to the wrong place
+        - A claim has no source, or its source doesn't say it
+        - The text isn't neutral
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong
+      description: Quote the text or name the field, and say where you saw it.
+    validations:
+      required: true
+  - type: textarea
+    id: correction
+    attributes:
+      label: What is right, and the source
+      description: Link a source that shows it, such as the project's own site, its release notes or Wikidata.

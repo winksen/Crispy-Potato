@@ -1,0 +1,49 @@
+name: Request an entity
+description: Suggest a language, framework or runtime the catalog should cover.
+title: "Add <name>"
+labels: ["entity request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The first public version covers the entities listed in [content/planned.yaml](https://github.com/winksen/Crispy-Potato/blob/main/content/planned.yaml). Please check there and in the open issues first. Libraries come after version 0.2.0.
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      description: As its own project writes it.
+      placeholder: Gleam
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - Language
+        - Framework
+        - Runtime
+    validations:
+      required: true
+  - type: input
+    id: website
+    attributes:
+      label: Official website
+      placeholder: https://gleam.run
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it belongs
+      description: Who uses it and for what, and what readers would compare it with. Link a source for anything a reader could dispute.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send
+      options:
+        - label: It isn't in content/planned.yaml or in an open issue.
+          required: true
+        - label: I can help write its entry, following CONTRIBUTING.md.

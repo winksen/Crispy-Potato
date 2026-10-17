@@ -5,6 +5,7 @@
 - [docs/RELEASES_0.1.md](docs/RELEASES_0.1.md): the release index. One row per release of the 0.1 line, with its track, type, what it changes, when it is done and what it needs. The decisions it relies on (D1–D9) are agreed.
 - [docs/MINDMAP.md](docs/MINDMAP.md): what the project is and what is built, kept current by every release.
 - [CHANGELOG.md](CHANGELOG.md): what each release changed, newest first.
+- [CONTRIBUTING.md](CONTRIBUTING.md): adding and editing entities, the sourcing rules, the fit-rating rubric and the review checklist. Content written for the catalog follows it.
 - [docs/architecture.md](docs/architecture.md) and [docs/data-model.md](docs/data-model.md): how the system is meant to work and what each content field means.
 
 ## How each release is made

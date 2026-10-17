@@ -2,6 +2,22 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.17 (2026-10-17)
+
+A contributing guide, a pull request template and two issue forms, so contributors know the rules before they write and reviewers check the same things every time.
+
+### Added
+- **[CONTRIBUTING.md](CONTRIBUTING.md)**: the tools and commands; adding an entity step by step from `cargo new-entity`; editing one (ids never change, numbers are reported rather than written, wrong collected facts go under `overrides`); the sourcing rules (a source for anything a reader could dispute, which sources to prefer and avoid, facts read against Wikidata and the project's site, no collected numbers, neutral tone with the marketing words to leave out, your own words, no unreviewed AI text, stable links); the fit-rating rubric with an example of each rating from Rust and React; the writing style for each field; the review checklist; and how to contribute code.
+- **A pull request template** with the kind of change, the main checklist items and a place for sources and AI use.
+- **Two issue forms**: *Request an entity* (name, kind, website, why it belongs, a check against `planned.yaml`) and *Report a data problem* (entity, page, kind of problem, what is wrong, the correction with its source). The report's `entity` and `page` fields can be filled from the address (`?template=report-data-problem.yml&entity=rust&page=…`), which the website's "Report a data problem" link will use (V0.1.117). A config file adds a link to private security reporting next to them.
+- **Links to the guide** from the README, the data model's `fit` section, `CLAUDE.md`, and the template `cli new` writes, whose fit comment now points at the rubric.
+
+### Not done
+- **The templates have not been seen on GitHub**, because nothing is pushed. The two forms and their config were validated against SchemaStore's schemas for GitHub issue forms, which also refused a form with a missing label or an unknown field type.
+
+### Upgrading
+- **The owner creates the labels** `entity request` and `data problem` on GitHub; until then the forms work but add no label.
+
 ## V0.1.16 (2026-10-17)
 
 `cli new` starts an entity file from a commented template, and validation lists every `TODO` left in it.

@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.16` (2026-10-17). V0.1.16 adds `cli new` and refuses `TODO` placeholders; V0.1.15 adds `ids.simple_icons` for logos; V0.1.14 lets `so_survey` hold a name per survey year; V0.1.13 adds `choose_when`; V0.1.12 adds JSON Schemas for editors (`cargo schema`); V0.1.11 checks every external id against its source's format, bounds years, orders timelines and keeps `vs` out of ids; V0.1.10 puts hard limits on loading content (no links, 256 KiB per file, a YAML parser budget); V0.1.9 makes diagnostic paths relative with forward slashes and matches extensions without regard to case; V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
+> **Scope:** the repository at `V0.1.17` (2026-10-17). V0.1.17 adds the contributing guide, a pull request template and issue forms; V0.1.16 adds `cli new` and refuses `TODO` placeholders; V0.1.15 adds `ids.simple_icons` for logos; V0.1.14 lets `so_survey` hold a name per survey year; V0.1.13 adds `choose_when`; V0.1.12 adds JSON Schemas for editors (`cargo schema`); V0.1.11 checks every external id against its source's format, bounds years, orders timelines and keeps `vs` out of ids; V0.1.10 puts hard limits on loading content (no links, 256 KiB per file, a YAML parser budget); V0.1.9 makes diagnostic paths relative with forward slashes and matches extensions without regard to case; V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
 
 ---
 
@@ -50,6 +50,7 @@ mindmap
       One version, checked against the changelog
       Changelog and release index
       CLAUDE.md release rules
+      Contributing guide and templates
       LF line endings everywhere
     Security
       Threat model with 24 threats
@@ -135,6 +136,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 - **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.15 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
 - **Decisions D1–D9** in the release index are agreed: licenses, the web framework and tooling, the hosting shape, the secrets the owner provides, what the implementer may run, the tag name, the survey years and the project name.
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
+- **Contributing** (since V0.1.17): [CONTRIBUTING.md](../CONTRIBUTING.md) covers adding and editing entities, the sourcing rules (a source for anything disputable, preferred sources, no collected numbers, neutral tone, own words, no unreviewed AI text), the fit-rating rubric, the writing style and the review checklist. `.github/pull_request_template.md` carries the checklist; `.github/ISSUE_TEMPLATE/` has the *Request an entity* and *Report a data problem* forms (the latter's `entity` and `page` fields can be prefilled from the URL) and a link to private security reporting.
 - **Line endings** (since V0.1.2): `.gitattributes` stores every text file with LF and marks binary types; `.editorconfig` sets UTF-8, LF, a final newline and the indent size for editors.
 
 ## 6. Security
@@ -165,6 +167,6 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 
 ## 8. Not built yet
 
-- **The contributing guide** (V0.1.17).
+- **Development environment** (V0.1.18): `compose.yaml` with Postgres and `docs/DEVELOPMENT.md`.
 - **Database and sync** (track C), **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).

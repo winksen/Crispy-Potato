@@ -18,6 +18,11 @@ struct Cli {
 enum Command {
     /// Apply database migrations (use the database owner's credentials).
     Migrate,
+    /// Validate and synchronize curated content in one transaction.
+    Sync {
+        #[arg(long, default_value = "content")]
+        content: PathBuf,
+    },
     /// Check every file in the content folder.
     Validate {
         /// Path to the content folder.
@@ -51,6 +56,38 @@ enum Command {
 #[tokio::main]
 async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::Sync { content } => {
+            if validate(&content) != ExitCode::SUCCESS {
+                return ExitCode::FAILURE;
+            }
+            let Ok(url) = std::env::var("DATABASE_URL") else {
+                eprintln!("DATABASE_URL is required");
+                return ExitCode::FAILURE;
+            };
+            let Ok(pool) = engine::db::connect(&url).await else {
+                eprintln!("Cannot connect to the database");
+                return ExitCode::FAILURE;
+            };
+            match engine::sync::sync(&pool, &content).await {
+                Ok(report) => {
+                    println!(
+                        "{} changed, {} retired; content {}",
+                        report.changed,
+                        report.retired,
+                        if report.unchanged {
+                            "unchanged"
+                        } else {
+                            "updated"
+                        }
+                    );
+                    ExitCode::SUCCESS
+                }
+                Err(_) => {
+                    eprintln!("Content sync failed; transaction rolled back");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::Migrate => {
             let Ok(url) = std::env::var("DATABASE_URL") else {
                 eprintln!("DATABASE_URL is required");

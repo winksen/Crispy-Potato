@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.20` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.21` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
 
 ---
 
@@ -28,8 +28,8 @@ mindmap
       Code samples
     Crates
       model: the data types
-      engine: loading, validation and Postgres pool
-      cli: validate, schema, new, migrate and --version
+      engine: validation, Postgres pool and transactional sync
+      cli: validate, schema, new, migrate, sync and --version
     Validation
       Schema and unknown fields
       15 external id formats
@@ -57,13 +57,13 @@ mindmap
       Untrusted content limits
       Private vulnerability reports
     Quality
-      46 Rust tests
+      Content and Postgres integration tests
       fmt, clippy and validate
       No unsafe, no unwrap outside tests
       CI on every push and pull request
       cargo deny and Dependabot
     Not built yet
-      Content sync
+      HTTP API and collection
       Data collection
       HTTP API
       Web app
@@ -150,7 +150,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 45 pass: 4 in `model` (dates, survey names), 5 in `engine` (alias limits, id formats, schemas, placeholders), 32 for content and new entities in `engine/tests/content.rs` (the symbolic-link test skips where links can't be created), 3 for the version and 1 for stale schemas in `cli/tests/` |
+| Tests | `cargo test` | 48 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
@@ -168,7 +168,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 ## 8. Not built yet
 
 - **Development environment is built** (V0.1.18): digest-pinned Postgres 17 in `compose.yaml`, `.env.example` and `docs/DEVELOPMENT.md`.
-- **Content sync** (track C), **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
+- **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).
 
 ### V0.1.18 — A reproducible local Postgres environment.
@@ -188,3 +188,9 @@ Checks: cargo fmt, clippy, test (46 tests), validate, schema --check and cargo d
 **Collected data.** Migration 0002 adds sources, observations, quarantine, releases, facts, ingestion runs and HTTP validators; observations upsert by entity, metric, period, date and source; the data model documents all fourteen tables
 
 Checks: cargo fmt, clippy, test (47 tests), validate and schema --check pass, including a real Postgres observation upsert test; GitHub CI awaits a push
+
+### V0.1.21 — Validated content sync in one transaction.
+
+**Sync.** cli sync writes a stable validated snapshot, derives reverse relations, imports samples and vocabularies, hashes all content with sha2 0.10, skips unchanged runs and retires removed entities without deleting collected history
+
+Checks: cargo fmt, clippy, test (48 tests), validate, schema --check and cargo deny pass; sync repeatability, invalid-input rollback and retirement are tested in Postgres; GitHub CI awaits a push

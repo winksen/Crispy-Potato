@@ -209,7 +209,7 @@ Every trait is a list, even when it usually has one value (`memory: [ownership]`
 
 ### Relations
 
-Each relation is stored on one side only. The engine will derive the reverse direction on sync.
+Each relation is written on one side only. Since V0.1.21 sync stores both directions: `alternatives` and `often_with` are symmetric; `built_on` reverses to `foundation_of`, `runs_on` to `runs`, and `succeeded_by` to `succeeds`. Planned targets are valid edges.
 
 | Relation | Direction | Example | Rule |
 |----------|-----------|---------|------|

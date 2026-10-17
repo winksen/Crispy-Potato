@@ -31,6 +31,10 @@ Every new application setting must be documented here when introduced.
 
 The container's user and database are fixed as `cp_owner` and `crispy_potato`. Content-only commands need no database.
 
+## Content sync (V0.1.21)
+
+After migrations, run `cargo run -p cli -- sync` (optionally `--content <folder>`). It validates a stable snapshot, then writes everything in one transaction guarded by an advisory lock. Invalid content writes nothing. A second identical run prints `0 changed, 0 retired; content unchanged`. A sample-only or vocabulary-only edit still updates the content version even when no entity document changes. Removed entities retire; their observations remain. Sync needs data-write privileges, not schema ownership.
+
 ## Migrations (V0.1.19)
 
 Set `$env:DATABASE_URL = 'postgres://cp_owner:<password>@localhost:5432/crispy_potato'` in PowerShell (URL-encode special password characters), then run `cargo run -p cli -- migrate`. Running it again is safe: sqlx records applied migration checksums. Never edit a shipped migration; add another. `cargo test` uses this URL to create isolated test databases, so the test user needs CREATEDB. Never point tests at production.

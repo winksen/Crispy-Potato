@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.21 (2026-10-17)
+
+Validated content sync in one transaction.
+
+### Added
+- **Sync.** cli sync writes a stable validated snapshot, derives reverse relations, imports samples and vocabularies, hashes all content with sha2 0.10, skips unchanged runs and retires removed entities without deleting collected history
+
+### Not done
+- cargo fmt, clippy, test (48 tests), validate, schema --check and cargo deny pass; sync repeatability, invalid-input rollback and retirement are tested in Postgres; GitHub CI awaits a push
+
+### Upgrading
+- Run cli migrate then cli sync with DATABASE_URL set.
+
 ## V0.1.20 (2026-10-17)
 
 Storage for collected data and provenance.

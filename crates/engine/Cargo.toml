@@ -16,6 +16,5 @@ serde-saphyr.workspace = true
 serde_json.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
-
-[dev-dependencies]
+sha2.workspace = true
 tempfile.workspace = true

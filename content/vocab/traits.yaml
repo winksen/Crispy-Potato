@@ -1,0 +1,179 @@
+# Allowed values for entity traits. Add a value here before using it in an
+# entity file.
+
+# Languages
+
+typing:
+  static:
+    label: Static
+    description: Types are checked before the program runs.
+  dynamic:
+    label: Dynamic
+    description: Types are checked while the program runs.
+  strong:
+    label: Strong
+    description: Values are not silently converted between unrelated types.
+  weak:
+    label: Weak
+    description: Values are converted between types implicitly.
+  inferred:
+    label: Inferred
+    description: The compiler works out most types without annotations.
+  gradual:
+    label: Gradual
+    description: Type annotations are optional and can be added over time.
+
+memory:
+  gc:
+    label: Garbage collected
+    description: A runtime frees memory that is no longer reachable.
+  ownership:
+    label: Ownership
+    description: The compiler tracks which code owns each value and frees it when the owner goes out of scope.
+  manual:
+    label: Manual
+    description: The programmer allocates and frees memory explicitly.
+  arc:
+    label: Reference counting
+    description: Each value counts its references and is freed when the count reaches zero.
+
+execution:
+  compiled-native:
+    label: Compiled to native code
+    description: Compiled ahead of time to machine code.
+  bytecode-vm:
+    label: Bytecode VM
+    description: Compiled to bytecode that a virtual machine runs.
+  interpreted:
+    label: Interpreted
+    description: Source code is run directly by an interpreter.
+  jit:
+    label: JIT-compiled
+    description: Frequently run code is compiled to machine code while the program runs.
+  transpiled:
+    label: Transpiled
+    description: Compiled to another high-level language, such as JavaScript.
+
+paradigms:
+  imperative:
+    label: Imperative
+    description: Programs are sequences of statements that change state.
+  procedural:
+    label: Procedural
+    description: Code is organized into procedures that operate on data.
+  object-oriented:
+    label: Object-oriented
+    description: Code is organized into objects that bundle data and behavior.
+  functional:
+    label: Functional
+    description: Programs are built from functions, favoring immutable data and expressions.
+  generic:
+    label: Generic
+    description: Code can be written once and used with many types.
+  concurrent:
+    label: Concurrent
+    description: The language has built-in constructs for running work concurrently.
+  declarative:
+    label: Declarative
+    description: Programs describe the result rather than the steps to reach it.
+
+concurrency:
+  threads:
+    label: OS threads
+    description: Work runs on operating-system threads.
+  async:
+    label: Async/await
+    description: Tasks pause while waiting for I/O without blocking a thread.
+  actors:
+    label: Actors
+    description: Isolated processes communicate only by sending messages.
+  green-threads:
+    label: Green threads
+    description: The runtime schedules many lightweight threads onto fewer OS threads.
+  event-loop:
+    label: Event loop
+    description: A single thread handles events and callbacks in turn.
+  csp:
+    label: Channels (CSP)
+    description: Concurrent tasks communicate over channels.
+  coroutines:
+    label: Coroutines
+    description: Functions can suspend and resume cooperatively.
+
+# Languages and runtimes
+
+targets:
+  linux:
+    label: Linux
+    description: Runs on Linux.
+  macos:
+    label: macOS
+    description: Runs on macOS.
+  windows:
+    label: Windows
+    description: Runs on Windows.
+  browser:
+    label: Browser
+    description: Runs in web browsers, natively or by compiling to JavaScript.
+  wasm:
+    label: WebAssembly
+    description: Compiles to WebAssembly.
+  ios:
+    label: iOS
+    description: Runs on iPhone and iPad.
+  android:
+    label: Android
+    description: Runs on Android devices.
+  embedded:
+    label: Embedded
+    description: Runs on microcontrollers, often without an operating system.
+
+# Frameworks
+
+architecture:
+  component:
+    label: Component-based
+    description: The UI is built from reusable, self-contained components.
+  mvc:
+    label: MVC
+    description: Code is split into models, views and controllers.
+  minimal:
+    label: Minimal
+    description: A small core that leaves most choices to the developer.
+  batteries-included:
+    label: Batteries included
+    description: Ships with most of what a typical app needs, such as an ORM, authentication and templating.
+  meta-framework:
+    label: Meta-framework
+    description: Builds on another framework to add routing, server rendering and deployment.
+
+rendering:
+  csr:
+    label: Client-side rendering
+    description: Pages are rendered in the browser with JavaScript.
+  ssr:
+    label: Server-side rendering
+    description: Pages are rendered on the server for each request.
+  ssg:
+    label: Static generation
+    description: Pages are rendered once at build time.
+  native:
+    label: Native views
+    description: The UI is drawn with the platform's own UI components.
+  own-renderer:
+    label: Own renderer
+    description: The framework draws every pixel itself instead of using platform UI components.
+
+platforms:
+  ios:
+    label: iOS
+    description: Builds apps for iPhone and iPad.
+  android:
+    label: Android
+    description: Builds apps for Android devices.
+  web:
+    label: Web
+    description: Builds apps that run in the browser.
+  desktop:
+    label: Desktop
+    description: Builds apps for Windows, macOS or Linux.

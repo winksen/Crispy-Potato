@@ -1,0 +1,54 @@
+# Kinds of projects. Entities rate how well they fit each one under `domains`,
+# and frameworks use these values for `traits.ecosystem`.
+
+web-frontend:
+  label: Web frontend
+  description: User interfaces that run in the browser.
+
+web-backend:
+  label: Web backend
+  description: Servers and APIs behind websites and apps.
+
+mobile:
+  label: Mobile
+  description: Apps for iOS and Android.
+
+desktop:
+  label: Desktop
+  description: Applications for Windows, macOS and Linux.
+
+systems:
+  label: Systems
+  description: Operating systems, databases, compilers and other low-level software.
+
+embedded:
+  label: Embedded
+  description: Firmware and software for microcontrollers and other devices.
+
+cli:
+  label: Command-line tools
+  description: Programs used from a terminal.
+
+scripting:
+  label: Scripting and automation
+  description: Small programs that glue tools together or automate tasks.
+
+devops:
+  label: DevOps and infrastructure
+  description: Deployment, cloud infrastructure and operations tooling.
+
+data-science:
+  label: Data science
+  description: Analyzing, cleaning and visualizing data.
+
+machine-learning:
+  label: Machine learning
+  description: Training and serving models.
+
+scientific:
+  label: Scientific computing
+  description: Simulation and numerical work in research and engineering.
+
+games:
+  label: Games
+  description: Game engines and the games built with them.

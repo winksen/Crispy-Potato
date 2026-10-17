@@ -1,0 +1,10 @@
+[package]
+name = "model"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+indexmap.workspace = true
+serde.workspace = true
+url.workspace = true

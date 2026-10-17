@@ -1,0 +1,87 @@
+id: rust
+kind: language
+name: Rust
+aliases: [rust-lang]
+tagline: Systems programming with memory safety and no garbage collector.
+summary: >
+  Rust is a compiled, statically typed language aimed at performance and
+  reliability. Its ownership and borrowing rules let the compiler rule out
+  data races and most memory bugs without a garbage collector.
+
+links:
+  website: https://www.rust-lang.org
+  docs: https://doc.rust-lang.org
+  repo: https://github.com/rust-lang/rust
+
+ids:
+  wikidata: Q575650
+  github: rust-lang/rust
+  stackoverflow_tag: rust
+  so_survey: Rust
+  endoflife: rust
+
+traits:
+  typing: [static, strong, inferred]
+  memory: [ownership]
+  execution: [compiled-native]
+  paradigms: [imperative, functional, generic, concurrent]
+  concurrency: [threads, async]
+  targets: [linux, macos, windows, wasm, embedded]
+
+domains:
+  - domain: systems
+    fit: excellent
+  - domain: cli
+    fit: excellent
+  - domain: embedded
+    fit: good
+  - domain: web-backend
+    fit: good
+    note: Mature frameworks such as axum, but a smaller ecosystem than Go or Node.js.
+  - domain: data-science
+    fit: poor
+    note: Used to build data tools such as Polars rather than for analysis itself.
+
+strengths:
+  - title: Memory safety without a garbage collector
+    detail: The borrow checker rules out use-after-free, double frees and data races at compile time.
+    sources:
+      - https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html
+  - title: Integrated tooling
+    detail: Cargo handles building, dependencies, testing, documentation and publishing.
+
+weaknesses:
+  - title: Steep learning curve
+    detail: Ownership, lifetimes and the trait system take time to learn.
+  - title: Slow compilation
+    detail: Large projects compile noticeably slower than comparable Go or C projects.
+
+relations:
+  alternatives: [cpp, c, go]
+
+timeline:
+  - date: 2015-05-15
+    title: Rust 1.0 released
+    url: https://blog.rust-lang.org/2015/05/15/Rust-1.0.html
+  - date: 2021-02-08
+    title: Rust Foundation founded
+    url: https://foundation.rust-lang.org/news/2021-02-08-hello-world/
+
+learning:
+  curve: steep
+  resources:
+    - title: The Rust Programming Language
+      url: https://doc.rust-lang.org/book/
+      kind: book
+      free: true
+    - title: Rustlings
+      url: https://github.com/rust-lang/rustlings
+      kind: exercises
+      free: true
+
+notable_users:
+  - name: Linux kernel
+    what: Rust is supported for writing kernel code alongside C.
+    source: https://docs.kernel.org/rust/index.html
+
+samples: [rust/hello.rs]

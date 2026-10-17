@@ -1,0 +1,60 @@
+# Entities in the v1 scope that don't have a file yet. Other files may refer to
+# these ids before the files exist. Remove an id from this list when you add
+# its file.
+
+languages:
+  - javascript
+  - typescript
+  - python
+  - java
+  - csharp
+  - c
+  - cpp
+  - go
+  - php
+  - kotlin
+  - swift
+  - ruby
+  - dart
+  - scala
+  - r
+  - lua
+  - elixir
+
+frameworks:
+  # Web frontend
+  - vue
+  - angular
+  - svelte
+  - solidjs
+  - nextjs
+  - nuxt
+  - sveltekit
+  - astro
+  # Web backend
+  - express
+  - nestjs
+  - django
+  - fastapi
+  - flask
+  - spring-boot
+  - aspnet-core
+  - laravel
+  - rails
+  - gin
+  - axum
+  - phoenix
+  # Mobile
+  - react-native
+  - flutter
+  - swiftui
+  - jetpack-compose
+  - dotnet-maui
+  - kotlin-multiplatform
+
+runtimes:
+  - nodejs
+  - deno
+  - bun
+  - jvm
+  - dotnet

@@ -1,0 +1,79 @@
+id: react
+kind: framework
+name: React
+aliases: [reactjs, react.js]
+tagline: Build user interfaces from reusable components.
+summary: >
+  React is a JavaScript library for building user interfaces out of
+  components. Each component describes what the UI should look like for a
+  given state, and React updates the page when that state changes. Routing,
+  data fetching and server rendering usually come from a framework built on
+  top of it, such as Next.js.
+
+links:
+  website: https://react.dev
+  docs: https://react.dev/learn
+  repo: https://github.com/facebook/react
+
+ids:
+  wikidata: Q19399674
+  github: facebook/react
+  npm: react
+  stackoverflow_tag: reactjs
+  so_survey: React
+  endoflife: react
+
+traits:
+  ecosystem: web-frontend
+  languages: [javascript, typescript]
+  architecture: [component]
+  rendering: [csr, ssr]
+
+domains:
+  - domain: web-frontend
+    fit: excellent
+  - domain: mobile
+    fit: possible
+    note: React itself targets the web; React Native brings the same model to iOS and Android.
+
+strengths:
+  - title: Very large ecosystem
+    detail: Component libraries, tooling and learning material exist for almost every need, and many companies hire for it.
+  - title: Composable components
+    detail: UIs are built from small functions that take props and return markup, which keeps code reusable and testable.
+  - title: Focused scope
+    detail: React handles rendering and state, so it fits into many architectures and can be adopted one page at a time.
+
+weaknesses:
+  - title: Many decisions left to you
+    detail: Routing, data fetching, styling and state management come from other libraries or from a framework such as Next.js.
+  - title: Shifting best practices
+    detail: Recommended patterns have changed from class components to hooks to server components, so older tutorials can mislead.
+
+relations:
+  alternatives: [vue, angular, svelte, solidjs]
+  often_with: [typescript]
+
+timeline:
+  - date: 2013-05
+    title: Open-sourced by Facebook
+  - date: 2019-02-06
+    title: Hooks introduced in React 16.8
+    url: https://legacy.reactjs.org/blog/2019/02/06/react-v16.8.0.html
+  - date: 2024-12-05
+    title: React 19 makes server components stable
+    url: https://react.dev/blog/2024/12/05/react-19
+
+learning:
+  curve: moderate
+  resources:
+    - title: Learn React
+      url: https://react.dev/learn
+      kind: docs
+      free: true
+    - title: "Tutorial: Tic-Tac-Toe"
+      url: https://react.dev/learn/tutorial-tic-tac-toe
+      kind: tutorial
+      free: true
+
+samples: [react/counter.jsx]

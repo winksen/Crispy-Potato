@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.8` (2026-10-17). V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
+> **Scope:** the repository at `V0.1.9` (2026-10-17). V0.1.9 makes diagnostic paths relative with forward slashes and matches extensions without regard to case; V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
 
 ---
 
@@ -33,6 +33,7 @@ mindmap
       References between entities
       Style limits
       Samples and overrides
+      Same paths on every OS
     Repository
       Code MIT OR Apache-2.0
       Content CC BY-SA 4.0
@@ -45,7 +46,7 @@ mindmap
       Threat model with 24 threats
       Private vulnerability reports
     Quality
-      18 Rust tests
+      20 Rust tests
       fmt, clippy and validate
       No unsafe, no unwrap outside tests
       CI on every push and pull request
@@ -89,17 +90,17 @@ flowchart LR
 | Crate | Holds |
 |---|---|
 | `model` | `Entity<T>` with `LanguageTraits`, `FrameworkTraits` and `RuntimeTraits`; links, external ids, domain fit, points, relations, milestones, learning, notable users, overrides; the vocabularies and `Planned`; `PartialDate` (a year, a month or a day) |
-| `engine` | `content::load`: reads `content/`, parses each file with unknown fields refused, runs the checks in `content/check.rs` and returns either the content or every problem found |
+| `engine` | `content::load`: reads `content/`, parses each file with unknown fields refused, runs the checks in `content/check.rs` and returns either the content or every problem found as `Diagnostic { file, message }` |
 | `cli` | `cli validate [--content <dir>]`, run as `cargo validate` (an alias in `.cargo/config.toml`); `cli --version` |
 
 Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfile` in tests.
 
 ## 4. Validation rules
 
-`cargo validate` reports every problem at once, each as `file: field: message`.
+`cargo validate` reports every problem at once, each as `file: field: message`. Since V0.1.9 the file, and any path inside a message, is relative to the content folder with forward slashes on every OS: `languages/rust.yaml`.
 
 - **Schema:** required fields, no unknown fields, real dates, http or https URLs.
-- **Files:** the file name matches the `id`, the `kind` matches the folder, ids are unique slugs, `.yml` is refused.
+- **Files:** the file name matches the `id`, the `kind` matches the folder, ids are unique slugs; extensions are matched without regard to case, so `.yml` is refused and `Rust.YAML` is read and asked to use lowercase (since V0.1.9).
 - **Vocabularies:** every trait, domain and ecosystem value is listed in `content/vocab/`.
 - **External ids:** at least one; Wikidata ids look like `Q575650`; GitHub ids are `owner/repo`.
 - **References:** relations and `traits.languages` point to an entity with a file or a planned one; alternatives share a kind, `runs_on` points to a runtime, nothing refers to itself; a file that fails to parse still counts as known.
@@ -127,7 +128,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 18 pass: 2 for dates in `model`, 13 for content in `engine/tests/content.rs`, 3 for the version in `cli/tests/version.rs` |
+| Tests | `cargo test` | 20 pass: 2 for dates in `model`, 15 for content in `engine/tests/content.rs`, 3 for the version in `cli/tests/version.rs` |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
 | CI | `.github/workflows/ci.yml` | since V0.1.4, on pushes to `main` and pull requests: format, lints, validate, tests; not yet run on GitHub |
@@ -143,6 +144,6 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 
 ## 8. Not built yet
 
-- **Validator fixes and limits on untrusted content** (V0.1.9–V0.1.11).
+- **Limits on untrusted content** (V0.1.10) and **stricter id, date and timeline checks** (V0.1.11).
 - **Database and sync** (track C), **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).

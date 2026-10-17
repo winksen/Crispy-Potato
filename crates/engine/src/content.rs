@@ -25,13 +25,47 @@ pub struct Content {
 /// A problem in one content file.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Diagnostic {
-    pub file: PathBuf,
+    /// The file, relative to the content folder and with forward slashes on
+    /// every OS: `languages/rust.yaml`.
+    pub file: String,
     pub message: String,
 }
 
 impl fmt::Display for Diagnostic {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}: {}", self.file.display(), self.message)
+        write!(f, "{}: {}", self.file, self.message)
+    }
+}
+
+/// The problems found so far, with paths written relative to the content folder.
+struct Diags<'a> {
+    root: &'a Path,
+    list: Vec<Diagnostic>,
+}
+
+impl Diags<'_> {
+    fn push(&mut self, file: &Path, message: impl Into<String>) {
+        let file = self.relative(file);
+        self.list.push(Diagnostic {
+            file,
+            message: message.into(),
+        });
+    }
+
+    /// `path` relative to the content folder, with forward slashes.
+    fn relative(&self, path: &Path) -> String {
+        match path.strip_prefix(self.root) {
+            Ok(relative) => relative
+                .components()
+                .map(|c| c.as_os_str().to_string_lossy())
+                .collect::<Vec<_>>()
+                .join("/"),
+            Err(_) => path.to_string_lossy().replace('\\', "/"),
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.list.is_empty()
     }
 }
 
@@ -39,7 +73,10 @@ impl fmt::Display for Diagnostic {
 ///
 /// Returns every problem found rather than stopping at the first one.
 pub fn load(root: &Path) -> Result<Content, Vec<Diagnostic>> {
-    let mut diags = Vec::new();
+    let mut diags = Diags {
+        root,
+        list: Vec::new(),
+    };
 
     let domains = read_yaml::<Terms>(&root.join("vocab/domains.yaml"), &mut diags);
     let traits = read_yaml::<TraitVocab>(&root.join("vocab/traits.yaml"), &mut diags);
@@ -64,7 +101,7 @@ pub fn load(root: &Path) -> Result<Content, Vec<Diagnostic>> {
     }
 
     let (Some(domains), Some(traits), Some(planned)) = (domains, traits, planned) else {
-        return Err(diags);
+        return Err(diags.list);
     };
     let vocab = Vocab { domains, traits };
 
@@ -77,34 +114,37 @@ pub fn load(root: &Path) -> Result<Content, Vec<Diagnostic>> {
             vocab,
         })
     } else {
-        Err(diags)
+        Err(diags.list)
     }
 }
 
-fn read_yaml<T: DeserializeOwned>(path: &Path, diags: &mut Vec<Diagnostic>) -> Option<T> {
+fn read_yaml<T: DeserializeOwned>(path: &Path, diags: &mut Diags) -> Option<T> {
     let source = read(path, diags)?;
     parse(path, &source, diags)
 }
 
-fn read(path: &Path, diags: &mut Vec<Diagnostic>) -> Option<String> {
+fn read(path: &Path, diags: &mut Diags) -> Option<String> {
     fs::read_to_string(path)
-        .map_err(|err| diags.push(diagnostic(path, format!("cannot read file: {err}"))))
+        .map_err(|err| diags.push(path, format!("cannot read file: {err}")))
         .ok()
 }
 
-fn parse<T: DeserializeOwned>(path: &Path, source: &str, diags: &mut Vec<Diagnostic>) -> Option<T> {
+fn parse<T: DeserializeOwned>(path: &Path, source: &str, diags: &mut Diags) -> Option<T> {
     serde_saphyr::from_str(source)
-        .map_err(|err| diags.push(diagnostic(path, err.to_string())))
+        .map_err(|err| diags.push(path, err.to_string()))
         .ok()
 }
 
 /// The `.yaml` files directly inside `dir`, sorted. A missing folder has no files.
-fn entity_files(dir: &Path, diags: &mut Vec<Diagnostic>) -> Vec<PathBuf> {
+///
+/// Extensions are matched without regard to case, so `Rust.YAML` is read and
+/// reported rather than silently skipped.
+fn entity_files(dir: &Path, diags: &mut Diags) -> Vec<PathBuf> {
     let entries = match fs::read_dir(dir) {
         Ok(entries) => entries,
         Err(err) if err.kind() == io::ErrorKind::NotFound => return Vec::new(),
         Err(err) => {
-            diags.push(diagnostic(dir, format!("cannot read folder: {err}")));
+            diags.push(dir, format!("cannot read folder: {err}"));
             return Vec::new();
         }
     };
@@ -114,21 +154,27 @@ fn entity_files(dir: &Path, diags: &mut Vec<Diagnostic>) -> Vec<PathBuf> {
         let path = match entry {
             Ok(entry) => entry.path(),
             Err(err) => {
-                diags.push(diagnostic(dir, format!("cannot read folder: {err}")));
+                diags.push(dir, format!("cannot read folder: {err}"));
                 continue;
             }
         };
-        match path.extension().and_then(|ext| ext.to_str()) {
-            Some("yaml") if path.is_file() => files.push(path),
-            Some("yml") => diags.push(diagnostic(&path, "use the .yaml extension")),
-            _ => {}
+        let Some(ext) = path.extension().and_then(|ext| ext.to_str()) else {
+            continue;
+        };
+        if ext.eq_ignore_ascii_case("yaml") && path.is_file() {
+            if ext != "yaml" {
+                diags.push(&path, "use the .yaml extension, in lowercase");
+            }
+            files.push(path);
+        } else if ext.eq_ignore_ascii_case("yml") {
+            diags.push(&path, "use the .yaml extension");
         }
     }
     files.sort();
     files
 }
 
-fn read_entity(path: &Path, folder_kind: Kind, diags: &mut Vec<Diagnostic>) -> Option<Entity> {
+fn read_entity(path: &Path, folder_kind: Kind, diags: &mut Diags) -> Option<Entity> {
     let source = read(path, diags)?;
 
     // Check `kind` first: a framework file in `languages/` would otherwise fail
@@ -140,14 +186,14 @@ fn read_entity(path: &Path, folder_kind: Kind, diags: &mut Vec<Diagnostic>) -> O
     if let Ok(KindOnly { kind }) = serde_saphyr::from_str::<KindOnly>(&source)
         && kind != folder_kind
     {
-        diags.push(diagnostic(
+        diags.push(
             path,
             format!(
                 "kind is {kind}, but the file is in {}/; move it to {}/",
                 folder_kind.dir(),
                 kind.dir()
             ),
-        ));
+        );
         return None;
     }
 
@@ -162,11 +208,4 @@ fn read_entity(path: &Path, folder_kind: Kind, diags: &mut Vec<Diagnostic>) -> O
             parse::<Entity<RuntimeTraits>>(path, &source, diags)?.map_traits(Traits::Runtime)
         }
     })
-}
-
-fn diagnostic(file: &Path, message: impl Into<String>) -> Diagnostic {
-    Diagnostic {
-        file: file.to_path_buf(),
-        message: message.into(),
-    }
 }

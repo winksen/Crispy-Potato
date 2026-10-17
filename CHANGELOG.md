@@ -2,6 +2,20 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.9 (2026-10-17)
+
+Diagnostics print the same paths on every OS, and entity files with an uppercase extension are no longer skipped.
+
+### Fixed
+- **Paths in diagnostics are relative to the content folder, with forward slashes**: `languages/rust.yaml: traits.memory[0]: …` instead of the folder given on the command line joined with a mix of `/` and `\` on Windows. Paths inside messages (a duplicate id's other file, a planned id's file, a missing sample) are written the same way. `Diagnostic::file` is now a `String` holding that path.
+- **Extensions are matched without regard to case.** A file named `Rust.YAML` was silently skipped; it is now read, validated, and reported with "use the .yaml extension, in lowercase". `.yml` in any case is still refused.
+
+### Added
+- **Two tests**: the exact diagnostic lines for a duplicate id, a planned id that has a file and a missing sample, with no backslash anywhere; and `.YAML` and `.Yml` files.
+
+### Upgrading
+- Nothing to do, unless a script parses the output of `cargo validate`: file paths now start at the content folder (`languages/rust.yaml`, not `content/languages/rust.yaml`).
+
 ## V0.1.8 (2026-10-17)
 
 A threat model says what the project protects and which release deals with each threat, and `SECURITY.md` says how to report a vulnerability.

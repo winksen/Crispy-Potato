@@ -211,10 +211,10 @@ Raw numbers mislead when compared carelessly, so the engine enforces these rules
 
 ## Validation
 
-Run `cargo validate` from the repository root. It reports every problem at once, each with its file and field. The rules are in [`crates/engine/src/content/check.rs`](../crates/engine/src/content/check.rs).
+Run `cargo validate` from the repository root. It reports every problem at once, each with its file and field, as `languages/rust.yaml: traits.memory[0]: …`: the path is relative to the content folder and uses forward slashes on every OS. The rules are in [`crates/engine/src/content/check.rs`](../crates/engine/src/content/check.rs).
 
 - **Schema:** required fields are present, there are no unknown fields, dates are real dates and URLs use http or https.
-- **Files:** each file name matches its `id`, the `kind` matches the folder, and ids are unique slugs.
+- **Files:** each file name matches its `id`, the `kind` matches the folder, and ids are unique slugs. Extensions are matched without regard to case: `.yml` is refused, and `Rust.YAML` is read and asked to use a lowercase `.yaml`.
 - **Vocabularies:** every trait and domain value is listed in `content/vocab/`.
 - **References:** every relation and every `traits.languages` entry points to an entity with a file or one listed in `planned.yaml`, following the rules in the relations table. Nothing refers to itself.
 - **Style:**

@@ -8,7 +8,7 @@ use std::path::{Component, Path, PathBuf};
 
 use model::{Entity, Fit, Kind, Planned, Point, Terms, Traits, Url, Vocab};
 
-use super::{Diagnostic, diagnostic};
+use super::Diags;
 
 const TAGLINE_MAX: usize = 100;
 const POINTS: RangeInclusive<usize> = 2..=6;
@@ -27,15 +27,14 @@ struct Context<'a> {
 }
 
 /// Collects problems for one file, prefixed with the field they concern.
-struct Report<'a> {
+struct Report<'a, 'r> {
     file: &'a Path,
-    diags: &'a mut Vec<Diagnostic>,
+    diags: &'a mut Diags<'r>,
 }
 
-impl Report<'_> {
+impl Report<'_, '_> {
     fn error(&mut self, field: impl Display, message: impl Display) {
-        self.diags
-            .push(diagnostic(self.file, format!("{field}: {message}")));
+        self.diags.push(self.file, format!("{field}: {message}"));
     }
 }
 
@@ -45,21 +44,20 @@ pub(super) fn check(
     unparsed: &[(PathBuf, Kind)],
     planned: &Planned,
     vocab: &Vocab,
-    diags: &mut Vec<Diagnostic>,
+    diags: &mut Diags,
 ) {
     let mut known = HashMap::new();
     for (file, entity) in entities {
         match known.get(entity.id.as_str()) {
             Some(Known {
                 file: Some(other), ..
-            }) => diags.push(diagnostic(
-                file,
-                format!(
-                    "id: \"{}\" is already used by {}",
-                    entity.id,
-                    other.display()
-                ),
-            )),
+            }) => {
+                let other = diags.relative(other);
+                diags.push(
+                    file,
+                    format!("id: \"{}\" is already used by {other}", entity.id),
+                );
+            }
             _ => {
                 known.insert(
                     entity.id.as_str(),
@@ -94,13 +92,15 @@ pub(super) fn check(
             match known.get(id.as_str()) {
                 Some(Known {
                     file: Some(file), ..
-                }) => report.error(
-                    &field,
-                    format!(
-                        "\"{id}\" already has a file ({}); remove it from planned.yaml",
-                        file.display()
-                    ),
-                ),
+                }) => {
+                    let file = report.diags.relative(file);
+                    report.error(
+                        &field,
+                        format!(
+                            "\"{id}\" already has a file ({file}); remove it from planned.yaml"
+                        ),
+                    );
+                }
                 Some(Known { file: None, .. }) => {
                     report.error(&field, format!("\"{id}\" is listed more than once"))
                 }
@@ -376,16 +376,14 @@ fn check_samples(e: &Entity, ctx: &Context, r: &mut Report) {
                 format!("\"{sample}\" must be a relative path inside the samples/ folder"),
             );
         } else if !ctx.samples.join(path).is_file() {
-            r.error(
-                field,
-                format!("file not found: {}", ctx.samples.join(path).display()),
-            );
+            let missing = r.diags.relative(&ctx.samples.join(path));
+            r.error(field, format!("file not found: {missing}"));
         }
     }
 }
 
 /// Aliases are used for search, so each one must point to a single entity.
-fn check_aliases(entities: &[(PathBuf, Entity)], planned: &Planned, diags: &mut Vec<Diagnostic>) {
+fn check_aliases(entities: &[(PathBuf, Entity)], planned: &Planned, diags: &mut Diags) {
     let planned_ids = Kind::ALL.into_iter().flat_map(|kind| planned.ids(kind));
     let entity_ids = entities.iter().map(|(_, e)| &e.id);
     let mut names: HashMap<String, &str> = entity_ids
@@ -397,10 +395,10 @@ fn check_aliases(entities: &[(PathBuf, Entity)], planned: &Planned, diags: &mut 
         for alias in &e.aliases {
             let key = alias.to_lowercase();
             match names.get(key.as_str()) {
-                Some(owner) if *owner != e.id => diags.push(diagnostic(
+                Some(owner) if *owner != e.id => diags.push(
                     file,
                     format!("aliases: \"{alias}\" is already used by \"{owner}\""),
-                )),
+                ),
                 Some(_) => {}
                 None => {
                     names.insert(key, &e.id);

@@ -89,6 +89,15 @@ fn problems(planned: &str, files: &[(&str, &str)]) -> Vec<String> {
     }
 }
 
+/// Every diagnostic for the fixture as the cli prints it: `file: message`.
+fn report(planned: &str, files: &[(&str, &str)]) -> Vec<String> {
+    let dir = fixture(planned, files);
+    match content::load(dir.path()) {
+        Ok(_) => Vec::new(),
+        Err(diags) => diags.iter().map(ToString::to_string).collect(),
+    }
+}
+
 fn assert_problem(problems: &[String], expected: &str) {
     assert!(
         problems.iter().any(|p| p.contains(expected)),
@@ -205,4 +214,56 @@ fn missing_samples_are_reported() {
     let source = format!("{LANGUAGE}samples: [testlang/hello.txt]\n");
     let problems = problems("", &[("languages/testlang.yaml", &source)]);
     assert_problem(&problems, "samples[0]: file not found");
+}
+
+#[test]
+fn paths_are_relative_to_the_content_folder_with_forward_slashes() {
+    let with_sample = format!(
+        "{LANGUAGE}samples: [testlang/missing.txt]
+"
+    );
+    let report = report(
+        "languages: [testlang]
+",
+        &[
+            ("languages/copy.yaml", LANGUAGE),
+            ("languages/testlang.yaml", &with_sample),
+        ],
+    );
+    for expected in [
+        "languages/copy.yaml: id: \"testlang\" does not match the file name; rename the file to testlang.yaml",
+        "languages/testlang.yaml: id: \"testlang\" is already used by languages/copy.yaml",
+        "planned.yaml: languages[0]: \"testlang\" already has a file (languages/copy.yaml); remove it from planned.yaml",
+        "languages/testlang.yaml: samples[0]: file not found: samples/testlang/missing.txt",
+    ] {
+        assert!(
+            report.iter().any(|line| line == expected),
+            "expected {expected:?} in {report:#?}"
+        );
+    }
+    assert!(
+        !report.iter().any(|line| line.contains('\\')),
+        "{report:#?}"
+    );
+}
+
+#[test]
+fn extensions_are_matched_without_regard_to_case() {
+    let broken = LANGUAGE.replace("memory: [gc]", "memory: [magic]");
+    let report = report(
+        "",
+        &[
+            ("languages/testlang.YAML", &broken),
+            ("languages/other.Yml", LANGUAGE),
+        ],
+    );
+    assert_problem(
+        &report,
+        "languages/testlang.YAML: use the .yaml extension, in lowercase",
+    );
+    assert_problem(
+        &report,
+        "languages/testlang.YAML: traits.memory[0]: unknown value \"magic\"",
+    );
+    assert_problem(&report, "languages/other.Yml: use the .yaml extension");
 }

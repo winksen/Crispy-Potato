@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.25 (2026-10-17)
+
+Conditional HTTP requests preserve unchanged data.
+
+### Added
+- **HTTP cache.** ETag and Last-Modified validators use hashed request keys, conditional headers and explicit acceptance transactions; a 304 increments the run unchanged count without rewriting observations
+
+### Not done
+- cargo fmt, clippy, test (53 tests), validate, schema --check and sqlx prepare --check pass; a wiremock/Postgres test verifies conditional headers, delayed cache acceptance, unchanged row identity and run count
+
+### Upgrading
+- No migration needed; callers accept cache validators only with successfully stored data.
+
 ## V0.1.24 (2026-10-17)
 
 A bounded retrying HTTP client for sources.

@@ -59,6 +59,8 @@ Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no databas
 
 ## HTTP transport (V0.1.24)
 
+Since V0.1.25 `http_cache::get` sends stored ETag and Last-Modified validators and returns `Changed` or `Unchanged`. A caller must persist the returned cache update in the same transaction as accepted data; malformed or rolled-back imports therefore cannot poison the cache. `record_unchanged` commits a 304's validators and run counter without touching observations. Cache keys hash the URL and request headers, keeping credential-bearing URLs out of storage. No new settings.
+
 `engine::http::Client` uses reqwest 0.12 with rustls only, gzip and brotli decoding, a five-second connect timeout and a 30-second deadline per attempt (including body reads). Responses are limited to 20 MiB after decoding, both by declared length when available and while streaming. The User-Agent includes the crate version and repository URL.
 
 There are three attempts total (the roadmap's “giving up after 3 tries” criterion), with exponential backoff starting at 500 ms plus jitter for 429, 5xx and timeouts. `Retry-After` seconds and HTTP dates are honored; delays over five minutes return a deferred error instead of retrying early. Other transport errors are not retried. Errors contain neither URLs nor response bodies. No new environment settings. Dependencies: reqwest 0.12, httpdate 1 and wiremock 0.6 for tests.

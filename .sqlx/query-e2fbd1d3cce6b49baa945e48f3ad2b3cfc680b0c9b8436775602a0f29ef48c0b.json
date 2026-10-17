@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE ingestion_runs SET unchanged=unchanged+1 WHERE id=$1 AND status='running'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e2fbd1d3cce6b49baa945e48f3ad2b3cfc680b0c9b8436775602a0f29ef48c0b"
+}

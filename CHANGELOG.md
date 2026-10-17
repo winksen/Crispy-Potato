@@ -2,6 +2,21 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.7 (2026-10-17)
+
+The version is written in one place, and a test keeps it equal to the newest changelog entry.
+
+### Added
+- **One version for the workspace.** `workspace.package.version` in the root `Cargo.toml` is the only place the version is written; every crate inherits it with `version.workspace = true`.
+- **`cli --version`** prints it (`cli 0.1.7`).
+- **A version test** (`crates/cli/tests/version.rs`): `cargo test` fails when the newest `## V…` heading in this changelog differs from the crate version, when a crate sets its own version, or when `--version` prints something else.
+
+### Changed
+- **The release rules** in the index and in `CLAUDE.md` say where the version lives and that the test checks it.
+
+### Upgrading
+- Nothing to do. From now on a release bumps the version in the root `Cargo.toml` and adds its changelog entry in the same commit.
+
 ## V0.1.6 (2026-10-17)
 
 Workspace-wide lints and formatting rules, so every crate follows the same ones.

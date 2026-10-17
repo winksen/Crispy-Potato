@@ -14,7 +14,7 @@ These are the rules from [the release index](docs/RELEASES_0.1.md#how-each-relea
 1. **One row, one commit.** Work in version order. Before starting a row, read it, the rows in its *Needs* column, [architecture.md](docs/architecture.md) and [data-model.md](docs/data-model.md).
 2. **Stay inside the row.** If a row needs a decision that isn't listed, stop and ask. Don't widen a row silently. If it turns out too big, ship its core, add a new row right after it for the rest, and renumber the planned rows that follow.
 3. **Fixes.** A small bug found in shipped work rides along with the next release and is listed under *Fixed* in its changelog entry. A larger one gets its own 🐞 row, inserted next.
-4. **Version.** Every release bumps the workspace version (and, from V0.1.96, the web package version) to its row's version. V0.1.7 adds the check that keeps them equal.
+4. **Version.** Every release bumps `workspace.package.version` in the root `Cargo.toml` (and, from V0.1.96, the web package version) to its row's version. It is the only place the version is written; since V0.1.7 `cargo test` fails when it differs from the newest `CHANGELOG.md` entry.
 5. **Changelog.** Every release adds an entry at the top of `CHANGELOG.md` in this format:
    ```markdown
    ## V0.1.N (YYYY-MM-DD)

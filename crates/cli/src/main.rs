@@ -6,7 +6,7 @@ use engine::content::{self, Content};
 use model::Kind;
 
 #[derive(Parser)]
-#[command(about = "Tools for the catalog's content and data")]
+#[command(version, about = "Tools for the catalog's content and data")]
 struct Cli {
     #[command(subcommand)]
     command: Command,

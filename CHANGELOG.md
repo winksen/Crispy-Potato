@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.32 (2026-10-17)
+
+Live content links are checked with bounded requests.
+
+### Added
+- **Link checks.** cli check-links reports file and field for HTTP failures, deadlines and cross-host redirects, using HEAD with GET fallback, eight checks at a time and shared host limits; a weekly workflow maintains one bot-owned health issue
+
+### Not done
+- cargo fmt, clippy, test (71 tests), validate and schema --check pass; wiremock covers fallback, 404, redirects and deadlines; all 16 live URLs pass after correcting two canonical Rust hosts; the weekly workflow was not run remotely because nothing is pushed
+
+### Upgrading
+- Run cli check-links locally; the weekly workflow starts after pushing, with no database required.
+
 ## V0.1.31 (2026-10-17)
 
 Credentials are redacted and missing secrets skip collection.

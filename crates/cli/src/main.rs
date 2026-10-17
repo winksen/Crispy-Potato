@@ -16,6 +16,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Check content URLs, with a ten-second deadline per URL.
+    CheckLinks {
+        #[arg(long, default_value = "content")]
+        content: PathBuf,
+    },
     /// Show last runs, failures and entity freshness for each source.
     Status,
     /// Inspect, release or discard held observations.
@@ -78,6 +83,32 @@ enum QuarantineAction {
 #[tokio::main]
 async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::CheckLinks { content } => {
+            let links = match engine::links::collect(&content) {
+                Ok(links) => links,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return ExitCode::FAILURE;
+                }
+            };
+            match engine::links::check(links, std::time::Duration::from_secs(10)).await {
+                Ok(report) => match serde_json::to_string_pretty(&report) {
+                    Ok(json) => {
+                        println!("{json}");
+                        if report.problems.is_empty() {
+                            ExitCode::SUCCESS
+                        } else {
+                            ExitCode::FAILURE
+                        }
+                    }
+                    Err(_) => ExitCode::FAILURE,
+                },
+                Err(_) => {
+                    eprintln!("Link checks failed");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::Status => {
             let Ok(url) = std::env::var("DATABASE_URL") else {
                 eprintln!("DATABASE_URL is required");

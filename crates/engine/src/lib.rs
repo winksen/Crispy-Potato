@@ -7,6 +7,7 @@ pub mod http;
 pub mod http_cache;
 pub mod ingest;
 pub mod limits;
+pub mod links;
 pub mod observations;
 pub mod quality;
 pub mod scaffold;

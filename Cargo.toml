@@ -5,7 +5,7 @@ members = ["crates/*"]
 [workspace.package]
 # The only place the version is written. Every release bumps it, and a test in
 # crates/cli/tests/version.rs checks it against the newest CHANGELOG.md entry.
-version = "0.1.31"
+version = "0.1.32"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 publish = false

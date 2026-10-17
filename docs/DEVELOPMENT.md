@@ -1,5 +1,11 @@
 # Local development
 
+## Live content checks (V0.1.32)
+
+`cargo run -p cli -- check-links` validates content then checks every URL-valued field, including nested sources and learning resources. It uses HEAD with GET fallback, eight concurrent checks, the shared two-per-host cap (or stricter provider limit), and a ten-second total deadline per URL. It reports HTTP failures, timeouts and redirects to a different hostname with the content-relative file and field. Output is JSON (`checked`, `problems`, `skipped`); any problem exits nonzero. URLs and response bodies are not logged. No database or credentials are needed.
+
+`.github/workflows/content-health.yml` runs weekly and by manual dispatch with `contents: read` and `issues: write`. It creates or updates one bot-owned **Content health checks** issue, closes it when clean and reopens the same issue on regression. It does not run on pull requests. The workflow has not run remotely until pushed; local checks never create issues.
+
 Install Rust through rustup and Docker with Compose. Run commands from the repository root.
 
 ```powershell

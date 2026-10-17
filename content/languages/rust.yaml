@@ -10,7 +10,7 @@ summary: >
   data races and most memory bugs without a garbage collector.
 
 links:
-  website: https://www.rust-lang.org
+  website: https://rust-lang.org
   docs: https://doc.rust-lang.org
   repo: https://github.com/rust-lang/rust
 
@@ -72,7 +72,7 @@ timeline:
     url: https://blog.rust-lang.org/2015/05/15/Rust-1.0.html
   - date: 2021-02-08
     title: Rust Foundation founded
-    url: https://foundation.rust-lang.org/news/2021-02-08-hello-world/
+    url: https://rustfoundation.org/news/2021-02-08-hello-world/
 
 learning:
   curve: steep

@@ -21,7 +21,7 @@ The rules:
 
 Every page is an entity.
 
-- `id`: a lowercase slug, stable forever, used in URLs. Examples: `rust`, `csharp`, `cpp`, `nextjs`, `aspnet-core`.
+- `id`: a lowercase slug, stable forever, used in URLs. Examples: `rust`, `csharp`, `cpp`, `nextjs`, `aspnet-core`. `vs` may not be one of its words, because compare URLs use it to separate ids (`/compare/go-vs-rust`).
 - `kind`: `language` | `framework` | `runtime`. Libraries will be a fourth kind after v1.
 
 `kind` describes the entity's role on the site, not what its authors call it. React calls itself a library, but it is a `framework` here because it sits alongside Vue and Angular.
@@ -75,7 +75,7 @@ When you add a file, remove its id from `planned.yaml`. Validation fails while a
 | `samples` | no | paths under `content/samples/` |
 | `overrides` | no | corrections to collected facts, each with a `reason` |
 
-Dates may be a year, a month or a day: `2013`, `2013-05` or `2015-05-15`.
+Dates may be a year, a month or a day: `2013`, `2013-05` or `2015-05-15`. The year must be from 1940 to next year, and `timeline` milestones are listed in date order (a year sorts before the months in it).
 
 ### `ids`: the link to automation
 
@@ -87,6 +87,25 @@ Dates may be a year, a month or a day: `2013`, `2013-05` or `2015-05-15`.
 | `stackoverflow_tag` | question counts over time |
 | `so_survey` | the name used in the Stack Overflow Developer Survey |
 | `endoflife` | the endoflife.date product slug: support cycles, LTS dates |
+
+Each id is checked against its source's format, so a typo fails validation rather than a lookup:
+
+| Key | Format | Example |
+|-----|--------|---------|
+| `wikidata` | `Q` and a number without leading zeros | `Q575650` |
+| `github` | `owner/repo`: an owner of letters, digits and single hyphens (at most 39), a name of letters, digits, `-`, `_` and `.` (at most 100) that is not `.` or `..` and doesn't end in `.git` | `rust-lang/rust` |
+| `npm` | lowercase letters, digits, `-`, `.`, `_` and `~`, not starting with `.` or `_`, optionally scoped; at most 214 characters | `@angular/core` |
+| `pypi` | letters, digits, `-`, `_` and `.`, starting and ending with a letter or digit | `django` |
+| `crates` | up to 64 letters, digits, `-` and `_`, starting with a letter | `axum` |
+| `nuget` | words of letters, digits and `_` joined by single `.` or `-`; at most 100 characters | `Microsoft.Maui.Controls` |
+| `packagist` | `vendor/package` in lowercase letters and digits with single `-`, `_` or `.` between them | `laravel/framework` |
+| `rubygems` | letters, digits, `-`, `_` and `.`, starting with a letter or digit and holding a letter | `rails` |
+| `pub` | lowercase letters, digits and `_`, not starting with a digit; at most 64 characters | `flutter` |
+| `hex` | lowercase letters, digits and `_`, starting with a letter | `phoenix` |
+| `maven` | `group:artifact`, the group in dotted words | `org.springframework.boot:spring-boot` |
+| `stackoverflow_tag` | up to 35 lowercase letters, digits and `+ # . -` | `c#` |
+| `so_survey` | the survey's name, up to 60 characters, no leading or trailing spaces | `Rust` |
+| `endoflife` | lowercase letters and digits joined by single hyphens | `spring-boot` |
 
 ### Traits
 
@@ -213,8 +232,9 @@ Raw numbers mislead when compared carelessly, so the engine enforces these rules
 
 Run `cargo validate` from the repository root. It reports every problem at once, each with its file and field, as `languages/rust.yaml: traits.memory[0]: …`: the path is relative to the content folder and uses forward slashes on every OS. The rules are in [`crates/engine/src/content/check.rs`](../crates/engine/src/content/check.rs).
 
-- **Schema:** required fields are present, there are no unknown fields, dates are real dates and URLs use http or https.
-- **Files:** each file name matches its `id`, the `kind` matches the folder, and ids are unique slugs. Extensions are matched without regard to case: `.yml` is refused, and `Rust.YAML` is read and asked to use a lowercase `.yaml`.
+- **Schema:** required fields are present, there are no unknown fields, dates are real dates from 1940 to next year and URLs use http or https.
+- **External ids:** each one matches its source's format (see the table under `ids`).
+- **Files:** each file name matches its `id`, the `kind` matches the folder, and ids are unique slugs without `vs` as a word. Extensions are matched without regard to case: `.yml` is refused, and `Rust.YAML` is read and asked to use a lowercase `.yaml`.
 - **Vocabularies:** every trait and domain value is listed in `content/vocab/`.
 - **References:** every relation and every `traits.languages` entry points to an entity with a file or one listed in `planned.yaml`, following the rules in the relations table. Nothing refers to itself.
 - **Style:**
@@ -222,6 +242,7 @@ Run `cargo validate` from the repository root. It reports every problem at once,
   - the tagline is at most 100 characters;
   - `possible` and `poor` fits have a note;
   - no value is listed twice;
+  - timeline milestones are in date order;
   - aliases are unique.
 - **Samples:** every path exists under `content/samples/`.
 - **Overrides:** every override has a non-empty `reason`.

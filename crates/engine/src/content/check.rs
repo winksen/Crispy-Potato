@@ -1,18 +1,23 @@
 //! Rules that go beyond what the types enforce: vocabularies, cross-references,
 //! naming and the house style for content.
 
+mod ids;
+
 use std::collections::{HashMap, HashSet};
 use std::fmt::Display;
 use std::ops::RangeInclusive;
 use std::path::{Component, Path, PathBuf};
 
-use model::{Entity, Fit, Kind, Planned, Point, Terms, Traits, Url, Vocab};
+use model::{Entity, Fit, Kind, PartialDate, Planned, Point, Terms, Traits, Url, Vocab};
 
 use super::Diags;
 
 const TAGLINE_MAX: usize = 100;
 const POINTS: RangeInclusive<usize> = 2..=6;
 const SLUG_HINT: &str = "use lowercase letters, digits and single hyphens, like spring-boot";
+const VS_HINT: &str = "compare URLs use it to separate ids, as in /compare/go-vs-rust";
+/// No programming language or framework predates the first programmable computers.
+const EARLIEST_YEAR: u16 = 1940;
 
 /// An id that other entities may refer to: an entity with a file, or a planned one.
 struct Known<'a> {
@@ -24,6 +29,8 @@ struct Context<'a> {
     known: &'a HashMap<&'a str, Known<'a>>,
     vocab: &'a Vocab,
     samples: PathBuf,
+    /// Dates may be at most a year ahead, for announced milestones.
+    latest_year: u16,
 }
 
 /// Collects problems for one file, prefixed with the field they concern.
@@ -88,6 +95,11 @@ pub(super) fn check(
             let field = format!("{}[{i}]", kind.dir());
             if !is_slug(id) {
                 report.error(&field, format!("\"{id}\" is not a valid id; {SLUG_HINT}"));
+            } else if has_vs(id) {
+                report.error(
+                    &field,
+                    format!("\"{id}\" contains \"vs\" as a word; {VS_HINT}"),
+                );
             }
             match known.get(id.as_str()) {
                 Some(Known {
@@ -115,6 +127,7 @@ pub(super) fn check(
         known: &known,
         vocab,
         samples: root.join("samples"),
+        latest_year: model::current_year().saturating_add(1),
     };
     for (file, entity) in entities {
         check_entity(entity, &ctx, &mut Report { file, diags });
@@ -126,6 +139,11 @@ pub(super) fn check(
 fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
     if !is_slug(&e.id) {
         r.error("id", format!("\"{}\" is not a valid id; {SLUG_HINT}", e.id));
+    } else if has_vs(&e.id) {
+        r.error(
+            "id",
+            format!("\"{}\" contains \"vs\" as a word; {VS_HINT}", e.id),
+        );
     }
     let stem = r
         .file
@@ -172,9 +190,23 @@ fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
     check_relations(e, ctx, r);
 
     for (i, milestone) in e.timeline.iter().enumerate() {
+        plausible_date(r, ctx, format!("timeline[{i}].date"), milestone.date);
         required_text(r, format!("timeline[{i}].title"), &milestone.title);
         if let Some(url) = &milestone.url {
             http_url(r, format!("timeline[{i}].url"), url);
+        }
+    }
+    for (i, pair) in e.timeline.windows(2).enumerate() {
+        if let [before, after] = pair
+            && after.date < before.date
+        {
+            r.error(
+                format!("timeline[{}].date", i + 1),
+                format!(
+                    "{} comes before the milestone above it ({}); list milestones in date order",
+                    after.date, before.date
+                ),
+            );
         }
     }
 
@@ -194,6 +226,9 @@ fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
 
     check_samples(e, ctx, r);
 
+    if let Some(inception) = &e.overrides.inception {
+        plausible_date(r, ctx, "overrides.inception.value", inception.value);
+    }
     for (field, reason) in e.overrides.reasons() {
         if reason.trim().is_empty() {
             r.error(
@@ -212,20 +247,24 @@ fn check_ids(e: &Entity, r: &mut Report) {
             "set at least one external id so data can be collected",
         );
     }
-    if let Some(id) = &ids.wikidata
-        && !is_wikidata_id(id)
-    {
-        r.error(
-            "ids.wikidata",
-            format!("\"{id}\" is not a Wikidata item id like Q575650"),
-        );
+    for (field, id) in ids.iter() {
+        if let Some(expected) = ids::problem(field, id) {
+            r.error(
+                format!("ids.{field}"),
+                format!("\"{id}\" is not {expected}"),
+            );
+        }
     }
-    if let Some(repo) = &ids.github
-        && !is_github_repo(repo)
-    {
+}
+
+fn plausible_date(r: &mut Report, ctx: &Context, field: impl Display, date: PartialDate) {
+    if !(EARLIEST_YEAR..=ctx.latest_year).contains(&date.year) {
         r.error(
-            "ids.github",
-            format!("\"{repo}\" is not in owner/repo form"),
+            field,
+            format!(
+                "{date} is not a plausible date; the year must be from {EARLIEST_YEAR} to {}",
+                ctx.latest_year
+            ),
         );
     }
 }
@@ -480,18 +519,8 @@ fn is_slug(s: &str) -> bool {
         })
 }
 
-fn is_wikidata_id(s: &str) -> bool {
-    s.strip_prefix('Q').is_some_and(|n| {
-        !n.is_empty() && !n.starts_with('0') && n.bytes().all(|b| b.is_ascii_digit())
-    })
-}
-
-fn is_github_repo(s: &str) -> bool {
-    let part = |p: &str| {
-        !p.is_empty()
-            && p.bytes()
-                .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.'))
-    };
-    s.split_once('/')
-        .is_some_and(|(owner, repo)| part(owner) && part(repo))
+/// Whether a slug has `vs` as one of its words, which would make a compare URL
+/// such as `/compare/a-vs-b` ambiguous.
+fn has_vs(slug: &str) -> bool {
+    slug.split('-').any(|word| word == "vs")
 }

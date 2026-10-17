@@ -1,5 +1,6 @@
 use std::fmt;
 use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::de::{self, Visitor};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -86,6 +87,29 @@ fn days_in_month(year: u16, month: u16) -> u16 {
     }
 }
 
+/// The current year in UTC, from the system clock.
+pub fn current_year() -> u16 {
+    let seconds = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |since| since.as_secs());
+    year_of_day(seconds / 86_400)
+}
+
+/// The year of a day counted from 1970-01-01, using Howard Hinnant's
+/// `civil_from_days`.
+fn year_of_day(day: u64) -> u16 {
+    let z = day + 719_468;
+    let era = z / 146_097;
+    let day_of_era = z % 146_097;
+    let year_of_era =
+        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    // Months counted from March, so January and February belong to the next year.
+    let march_based_month = (5 * day_of_year + 2) / 153;
+    let year = year_of_era + era * 400 + u64::from(march_based_month >= 10);
+    u16::try_from(year).unwrap_or(u16::MAX)
+}
+
 impl fmt::Display for PartialDate {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:04}", self.year)?;
@@ -144,6 +168,21 @@ mod tests {
         assert_eq!(date("2006"), Ok("2006".into()));
         assert_eq!(date("2013-05"), Ok("2013-05".into()));
         assert_eq!(date("2024-02-29"), Ok("2024-02-29".into()));
+    }
+
+    #[test]
+    fn years_of_days_since_1970() {
+        for (day, year) in [
+            (0, 1970),
+            (10_956, 1999),
+            (11_016, 2000),
+            (11_017, 2000),
+            (20_088, 2024),
+            (20_743, 2026),
+        ] {
+            assert_eq!(year_of_day(day), year, "day {day}");
+        }
+        assert!(current_year() >= 2026);
     }
 
     #[test]

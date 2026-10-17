@@ -2,6 +2,23 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.11 (2026-10-17)
+
+The validator closes five gaps: external ids are checked against their source's format, years must be plausible, timelines must be in order, and ids can't break compare URLs.
+
+### Fixed
+- **Every external id is checked against its source's format.** Only Wikidata and GitHub ids were checked, and loosely: `npm: ""` passed. Each kind now has its registry's rules: npm names and scopes, PyPI project names, crates.io names, NuGet ids, Packagist `vendor/package`, gem names, pub.dev and Hex names, Maven `group:artifact`, Stack Overflow tags, the survey name and endoflife.date slugs. The message says what a valid id looks like, with an example. The table is in the data model.
+- **GitHub ids refuse `.`, `..` and names ending in `.git`**, and owners follow GitHub's rule of letters, digits and single hyphens.
+- **Years must be from 1940 to next year.** A timeline date or an overridden inception of `0000` passed; the bound is the first programmable computers, and next year leaves room for announced milestones. `model::current_year()` reads the year from the system clock.
+- **Timelines must be in date order.** A milestone dated before the one above it is reported with both dates; a year sorts before the months in it.
+- **Ids may not contain `vs` as a word** (`rust-vs-go`, `vs-code`, `testlang-vs`), in entity files and in `planned.yaml`, because compare URLs use `-vs-` to separate ids. `canvas` is fine.
+
+### Added
+- **Table-driven tests**: real and malformed ids for each of the 14 id kinds, one malformed id per kind through the whole validator, GitHub's dot names and `.git` suffix, years on both sides of each bound, timelines in and out of order, and `vs` in entity and planned ids.
+
+### Upgrading
+- Nothing to do: Rust and React pass every new rule. A content file with an id in a registry's wrong format, a year outside 1940 to next year, or milestones out of order now fails validation.
+
 ## V0.1.10 (2026-10-17)
 
 Content files come from pull requests, so loading them now has hard limits: no links, no file over 256 KiB, and a YAML parser that refuses bombs before they expand.

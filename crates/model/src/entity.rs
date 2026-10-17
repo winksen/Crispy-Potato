@@ -173,6 +173,11 @@ pub struct ExternalIds {
 
 impl ExternalIds {
     pub fn is_empty(&self) -> bool {
+        self.iter().next().is_none()
+    }
+
+    /// Each id that is set, with its field name as written in content files.
+    pub fn iter(&self) -> impl Iterator<Item = (&'static str, &str)> {
         let ExternalIds {
             wikidata,
             github,
@@ -190,23 +195,23 @@ impl ExternalIds {
             endoflife,
         } = self;
         [
-            wikidata,
-            github,
-            npm,
-            pypi,
-            crates,
-            nuget,
-            packagist,
-            rubygems,
-            pub_dev,
-            hex,
-            maven,
-            stackoverflow_tag,
-            so_survey,
-            endoflife,
+            ("wikidata", wikidata),
+            ("github", github),
+            ("npm", npm),
+            ("pypi", pypi),
+            ("crates", crates),
+            ("nuget", nuget),
+            ("packagist", packagist),
+            ("rubygems", rubygems),
+            ("pub", pub_dev),
+            ("hex", hex),
+            ("maven", maven),
+            ("stackoverflow_tag", stackoverflow_tag),
+            ("so_survey", so_survey),
+            ("endoflife", endoflife),
         ]
-        .iter()
-        .all(|id| id.is_none())
+        .into_iter()
+        .filter_map(|(field, id)| Some((field, id.as_deref()?)))
     }
 }
 

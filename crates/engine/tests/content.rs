@@ -386,3 +386,183 @@ fn symlink(target: &Path, link: &Path, dir: bool) -> io::Result<()> {
         std::os::windows::fs::symlink_file(target, link)
     }
 }
+
+/// The fixture with one more line under `ids:`, next to its valid GitHub id.
+fn with_id(line: &str) -> String {
+    LANGUAGE.replace(
+        "  github: example/testlang\n",
+        &format!("  github: example/testlang\n  {line}\n"),
+    )
+}
+
+#[test]
+fn each_external_id_kind_is_checked_against_its_format() {
+    let cases = [
+        (
+            r#"wikidata: "575650""#,
+            r#"ids.wikidata: "575650" is not a Wikidata item id"#,
+        ),
+        (r#"npm: """#, r#"ids.npm: "" is not an npm package name"#),
+        (
+            r#"pypi: "-django""#,
+            r#"ids.pypi: "-django" is not a PyPI project name"#,
+        ),
+        (
+            r#"crates: "1password""#,
+            r#"ids.crates: "1password" is not a crates.io name"#,
+        ),
+        (
+            r#"nuget: "Foo..Bar""#,
+            r#"ids.nuget: "Foo..Bar" is not a NuGet package id"#,
+        ),
+        (
+            "packagist: laravel",
+            r#"ids.packagist: "laravel" is not a Packagist name"#,
+        ),
+        (
+            r#"rubygems: "123""#,
+            r#"ids.rubygems: "123" is not a gem name"#,
+        ),
+        (
+            "pub: flutter-bloc",
+            r#"ids.pub: "flutter-bloc" is not a pub.dev package name"#,
+        ),
+        (
+            "hex: Phoenix",
+            r#"ids.hex: "Phoenix" is not a Hex package name"#,
+        ),
+        (
+            "maven: spring-boot",
+            r#"ids.maven: "spring-boot" is not Maven coordinates"#,
+        ),
+        (
+            "stackoverflow_tag: React JS",
+            r#"ids.stackoverflow_tag: "React JS" is not a Stack Overflow tag"#,
+        ),
+        (
+            r#"so_survey: " Rust""#,
+            r#"ids.so_survey: " Rust" is not the name the Stack Overflow survey uses"#,
+        ),
+        (
+            "endoflife: node.js",
+            r#"ids.endoflife: "node.js" is not an endoflife.date product"#,
+        ),
+    ];
+    for (line, expected) in cases {
+        let problems = problems("", &[("languages/testlang.yaml", &with_id(line))]);
+        assert_eq!(problems.len(), 1, "{line}: {problems:#?}");
+        assert_problem(&problems, expected);
+    }
+
+    let valid = [
+        "npm: \"@angular/core\"",
+        "maven: org.springframework.boot:spring-boot",
+        "stackoverflow_tag: c#",
+        "so_survey: ASP.NET Core",
+    ];
+    for line in valid {
+        let problems = problems("", &[("languages/testlang.yaml", &with_id(line))]);
+        assert_eq!(problems, Vec::<String>::new(), "{line}");
+    }
+}
+
+#[test]
+fn github_ids_refuse_dot_names_and_git_suffixes() {
+    for repo in [
+        "example/.",
+        "example/..",
+        "example/testlang.git",
+        "-example/testlang",
+    ] {
+        let source = LANGUAGE.replace("github: example/testlang", &format!("github: \"{repo}\""));
+        let problems = problems("", &[("languages/testlang.yaml", &source)]);
+        assert_problem(
+            &problems,
+            &format!("ids.github: \"{repo}\" is not a GitHub repository"),
+        );
+    }
+}
+
+#[test]
+fn dates_must_have_a_plausible_year() {
+    let next = model::current_year() + 1;
+    let cases = [
+        ("0000".to_owned(), false),
+        ("1939-12".to_owned(), false),
+        ("1940".to_owned(), true),
+        (next.to_string(), true),
+        ((next + 1).to_string(), false),
+        ("9999-01-01".to_owned(), false),
+    ];
+    for (date, valid) in cases {
+        let source = format!("{LANGUAGE}timeline:\n  - date: \"{date}\"\n    title: A milestone\n");
+        let problems = problems("", &[("languages/testlang.yaml", &source)]);
+        if valid {
+            assert_eq!(problems, Vec::<String>::new(), "{date}");
+        } else {
+            assert_problem(
+                &problems,
+                &format!(
+                    "timeline[0].date: {date} is not a plausible date; the year must be from 1940 to {next}"
+                ),
+            );
+        }
+    }
+
+    let source = format!(
+        "{LANGUAGE}overrides:\n  inception:\n    value: \"0000\"\n    reason: The source is wrong.\n"
+    );
+    let problems = problems("", &[("languages/testlang.yaml", &source)]);
+    assert_problem(
+        &problems,
+        "overrides.inception.value: 0000 is not a plausible date",
+    );
+}
+
+#[test]
+fn timelines_must_be_in_date_order() {
+    let source = format!(
+        "{LANGUAGE}timeline:\n  - date: 2015-05-15\n    title: Later\n  - date: 2013-05\n    title: Earlier\n"
+    );
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &source)]),
+        [
+            "timeline[1].date: 2013-05 comes before the milestone above it (2015-05-15); list milestones in date order"
+        ]
+    );
+
+    // A year sorts before the months in it, and equal dates may follow each other.
+    let source = format!(
+        "{LANGUAGE}timeline:\n  - date: 2013\n    title: A\n  - date: 2013-05\n    title: B\n  - date: 2013-05\n    title: C\n"
+    );
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &source)]),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
+fn ids_must_not_contain_vs_as_a_word() {
+    for id in ["rust-vs-go", "vs", "vs-code", "testlang-vs"] {
+        let source = LANGUAGE.replace("id: testlang", &format!("id: {id}"));
+        let problems = problems("", &[(&format!("languages/{id}.yaml"), &source)]);
+        assert_eq!(
+            problems,
+            [format!(
+                "id: \"{id}\" contains \"vs\" as a word; compare URLs use it to separate ids, as in /compare/go-vs-rust"
+            )]
+        );
+    }
+
+    assert_problem(
+        &problems("languages: [go-vs-rust]\n", &[]),
+        "languages[0]: \"go-vs-rust\" contains \"vs\" as a word",
+    );
+
+    // Inside a word it is fine.
+    let source = LANGUAGE.replace("id: testlang", "id: canvas");
+    assert_eq!(
+        problems("", &[("languages/canvas.yaml", &source)]),
+        Vec::<String>::new()
+    );
+}

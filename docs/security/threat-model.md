@@ -60,7 +60,7 @@ Status: ✅ mitigated by a shipped release · 🔜 planned. *Release* names the 
 | T2 | A symlink under `content/` (a sample linking to `/etc/passwd` or a secrets file) that sync stores and the API later serves | A3, A1 | Symlinks and junctions anywhere under `content/` refused, and nothing read through them; sample paths must stay inside `samples/` (V0.1.1) | 🔒 V0.1.10, V0.1.1 | ✅ |
 | T3 | A URL in content with a `javascript:` or `data:` scheme that becomes a link on the site | A4 | Validation accepts only http and https (V0.1.1); the web app checks again before rendering a link | V0.1.1, 🔒 V0.1.134 | ✅ validation, 🔜 rendering |
 | T4 | A pull request that runs code in CI with write access or secrets (`pull_request_target`, a writable token) | A3, A5 | CI runs on `pull_request` only, with a read-only token not kept in the checkout; actions pinned by SHA | V0.1.4 | ✅ |
-| T5 | An id crafted to break URLs or paths: `..` or `x.git` as a GitHub repo, `-vs-` in an entity id, an empty registry id | A1, A2 | Each external id kind checked against its registry's format; `-vs-` refused in ids | V0.1.11 | 🔜 |
+| T5 | An id crafted to break URLs or paths: `..` or `x.git` as a GitHub repo, `-vs-` in an entity id, an empty registry id | A1, A2 | Each external id kind checked against its registry's format; `vs` refused as a word in ids | V0.1.11 | ✅ |
 | T6 | Fabricated or misleading claims, or collected numbers written into content by hand | A1 | The schema refuses unknown fields, so `stars:` fails (V0.1.1); review and sourcing rules (V0.1.17); link and id checks (V0.1.32, V0.1.33) | V0.1.1, V0.1.17, V0.1.32, V0.1.33 | ✅ schema, 🔜 the rest |
 
 ### B2 · External sources

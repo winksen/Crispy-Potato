@@ -6,7 +6,7 @@ mod date;
 mod entity;
 mod vocab;
 
-pub use date::{InvalidDate, PartialDate};
+pub use date::{InvalidDate, PartialDate, current_year};
 pub use entity::*;
 pub use url::Url;
 pub use vocab::{Planned, Term, Terms, TraitVocab, Vocab};

@@ -12,3 +12,4 @@ workspace = true
 clap.workspace = true
 engine.workspace = true
 model.workspace = true
+tokio.workspace = true

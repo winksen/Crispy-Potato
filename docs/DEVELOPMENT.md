@@ -27,5 +27,12 @@ Every new application setting must be documented here when introduced.
 |---|---|---|
 | `POSTGRES_PASSWORD` | Compose / Postgres image | Required; local database owner's password |
 | `POSTGRES_PORT` | Compose | `5432`; localhost port published for Postgres |
+| `DATABASE_URL` | CLI / sqlx tests | Required for database commands; Postgres connection URL; use owner credentials for migrations and a disposable local owner database for tests |
 
 The container's user and database are fixed as `cp_owner` and `crispy_potato`. Content-only commands need no database.
+
+## Migrations (V0.1.19)
+
+Set `$env:DATABASE_URL = 'postgres://cp_owner:<password>@localhost:5432/crispy_potato'` in PowerShell (URL-encode special password characters), then run `cargo run -p cli -- migrate`. Running it again is safe: sqlx records applied migration checksums. Never edit a shipped migration; add another. `cargo test` uses this URL to create isolated test databases, so the test user needs CREATEDB. Never point tests at production.
+
+The engine pool allows five connections, waits at most five seconds to acquire one, drops idle connections after five minutes, and gives each statement 30 seconds. The CLI reports connection and migration failures without printing connection strings. New dependencies: sqlx 0.8 (Postgres, rustls, migrations, macros, JSON) and Tokio 1.

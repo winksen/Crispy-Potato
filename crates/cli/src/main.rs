@@ -16,6 +16,8 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Apply database migrations (use the database owner's credentials).
+    Migrate,
     /// Check every file in the content folder.
     Validate {
         /// Path to the content folder.
@@ -46,8 +48,31 @@ enum Command {
     },
 }
 
-fn main() -> ExitCode {
+#[tokio::main]
+async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::Migrate => {
+            let Ok(url) = std::env::var("DATABASE_URL") else {
+                eprintln!("DATABASE_URL is required");
+                return ExitCode::FAILURE;
+            };
+            match engine::db::connect(&url).await {
+                Ok(pool) => match engine::db::migrate(&pool).await {
+                    Ok(()) => {
+                        println!("Migrations are up to date");
+                        ExitCode::SUCCESS
+                    }
+                    Err(_) => {
+                        eprintln!("Database migration failed");
+                        ExitCode::FAILURE
+                    }
+                },
+                Err(_) => {
+                    eprintln!("Cannot connect to the database");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::Validate { content } => validate(&content),
         Command::Schema {
             content,

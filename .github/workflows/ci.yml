@@ -28,6 +28,19 @@ jobs:
     name: Format, lints, content and tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17@sha256:2d2b8998d31037bf721cfdf764d76ba74171b4fab3431b7f72c27c56ddbdf9e3
+        env:
+          POSTGRES_USER: cp_owner
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: crispy_potato
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U cp_owner -d crispy_potato"
+          --health-interval 2s --health-timeout 5s --health-retries 30
+    env:
+      DATABASE_URL: postgres://cp_owner:ci-only@localhost:5432/crispy_potato
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:

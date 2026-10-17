@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.19 (2026-10-17)
+
+Postgres storage and explicit migrations.
+
+### Added
+- **Database.** sqlx 0.8 and Tokio 1, a five-connection pool with acquire and statement timeouts, cli migrate, seven curated-data tables and isolated database tests with Postgres in CI. The reviewed CDLA-Permissive-2.0 license for webpki-roots trust data is allowed; retain its agreement when redistributing
+
+### Not done
+- cargo fmt, clippy, test (46 tests), validate, schema --check and cargo deny pass; migrations run twice locally; GitHub CI awaits a push
+
+### Upgrading
+- Set DATABASE_URL with owner credentials, run cargo run -p cli -- migrate; tests require a disposable database owner with CREATEDB.
+
 ## V0.1.18 (2026-10-17)
 
 A reproducible local Postgres environment.
@@ -9,7 +22,7 @@ A reproducible local Postgres environment.
 ### Added
 - **Development environment.** Digest-pinned Postgres 17, a localhost port, persistent volume, health check, ignored local settings and a development guide with the settings table
 
-### Checks
+### Not done
 - Docker Compose startup and psql connection, cargo fmt, clippy, test (45 tests), validate and schema --check pass; GitHub CI was not run because nothing is pushed
 
 ### Upgrading

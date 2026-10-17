@@ -2,6 +2,21 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.4 (2026-10-17)
+
+Every push to main and every pull request is checked on GitHub Actions.
+
+### Added
+- **A CI workflow** (`.github/workflows/ci.yml`) that runs on pushes to `main` and on pull requests: `cargo fmt --check`, clippy with `-D warnings`, `cargo validate`, then `cargo test`. Validation runs before the tests, so a pull request with a broken content file fails at the validate step with the validator's report; format, lints and validation each report even when an earlier one failed.
+- **Safe for untrusted pull requests.** Content pull requests come from contributors, so the workflow only runs on `pull_request`, never `pull_request_target`; its token is read-only (`permissions: contents: read`) and not kept in the checkout (`persist-credentials: false`).
+- **Pinned actions and a build cache.** `actions/checkout` and `Swatinem/rust-cache` are pinned by commit SHA (v6.1.0 and v2.9.2); the toolchain is installed with the runner's own `rustup` rather than a third-party action. Cargo commands use `--locked`, so a stale `Cargo.lock` fails.
+
+### Not done
+- **The workflow has not run on GitHub**, because nothing is pushed yet. Its steps were run locally with the same commands, and a copy of `content/` with a misspelled trait value made `cargo validate` exit with an error. The first push to `main` is the real check.
+
+### Upgrading
+- Nothing to do.
+
 ## V0.1.3 (2026-10-17)
 
 The code and the content get their licenses (decision D1).

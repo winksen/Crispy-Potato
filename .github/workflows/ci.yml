@@ -1,0 +1,58 @@
+# Every push to main and every pull request (release index, V0.1.4).
+#
+# Pull requests that edit content come from contributors and are untrusted, so
+# this workflow only ever runs on `pull_request` (never `pull_request_target`),
+# with a read-only token that is not kept in the checkout. Third-party actions
+# are pinned by commit SHA; the comment names the release the SHA belongs to.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  rust:
+    name: Format, lints, content and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+
+      # rustup comes with the runner image, so no action is needed for it.
+      - name: Install the Rust toolchain
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy
+          rustup default stable
+
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Lints
+        if: success() || failure()
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      # Before the tests, so a pull request with a broken content file fails here
+      # with the validator's report.
+      - name: Validate content
+        if: success() || failure()
+        run: cargo validate
+
+      - name: Tests
+        run: cargo test --locked

@@ -56,7 +56,7 @@ impl Client {
             .timeout(timeout)
             .gzip(true)
             .brotli(true)
-            .redirect(reqwest::redirect::Policy::limited(5))
+            .redirect(reqwest::redirect::Policy::none())
             .user_agent(concat!(
                 "Crispy-Potato/",
                 env!("CARGO_PKG_VERSION"),
@@ -73,6 +73,40 @@ impl Client {
 
     pub async fn request(
         &self,
+        mut method: Method,
+        url: &str,
+        mut headers: HeaderMap,
+    ) -> Result<Response, Error> {
+        let mut url = Url::parse(url).map_err(|_| Error::InvalidUrl)?;
+        for _ in 0..=5 {
+            let response = self
+                .request_once(method.clone(), url.as_str(), headers.clone())
+                .await?;
+            if !matches!(response.status, 301 | 302 | 303 | 307 | 308) {
+                return Ok(response);
+            }
+            let Some(location) = response
+                .headers
+                .get(reqwest::header::LOCATION)
+                .and_then(|v| v.to_str().ok())
+            else {
+                return Ok(response);
+            };
+            let next = url.join(location).map_err(|_| Error::InvalidUrl)?;
+            if next.origin() != url.origin() {
+                headers.remove(reqwest::header::AUTHORIZATION);
+                headers.remove(reqwest::header::COOKIE);
+            }
+            if response.status == 303 && method != Method::HEAD {
+                method = Method::GET;
+            }
+            url = next;
+        }
+        Err(Error::Transport)
+    }
+
+    async fn request_once(
+        &self,
         method: Method,
         url: &str,
         headers: HeaderMap,
@@ -86,6 +120,8 @@ impl Client {
         }
         // Three attempts total, matching the release's acceptance criterion.
         for attempt in 0..3 {
+            let host = crate::limits::host(url.host_str().ok_or(Error::InvalidUrl)?).await;
+            let permit = host.acquire().await.map_err(|_| Error::Transport)?;
             let result = self
                 .inner
                 .request(method.clone(), url.clone())
@@ -95,13 +131,10 @@ impl Client {
             match result {
                 Ok(mut response) => {
                     let status = response.status().as_u16();
-                    if (status == 429 || status >= 500) && attempt < 2 {
-                        self.wait(attempt, response.headers()).await?;
-                        continue;
-                    }
-                    if response
-                        .content_length()
-                        .is_some_and(|n| n > MAX_BODY as u64)
+                    if method != Method::HEAD
+                        && response
+                            .content_length()
+                            .is_some_and(|n| n > MAX_BODY as u64)
                     {
                         return Err(Error::TooLarge);
                     }
@@ -126,6 +159,14 @@ impl Client {
                         }
                     }
                     if !timeout {
+                        if url.host_str() == Some("api.stackexchange.com") {
+                            crate::limits::stackexchange_backoff(&host, &body).await;
+                        }
+                        if (status == 429 || status >= 500) && attempt < 2 {
+                            drop(permit);
+                            self.wait(attempt, &response_headers).await?;
+                            continue;
+                        }
                         return Ok(Response {
                             status,
                             headers: response_headers,

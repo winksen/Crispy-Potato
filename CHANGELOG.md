@@ -2,6 +2,22 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.26 (2026-10-17)
+
+Shared host quotas and bounded concurrency.
+
+### Added
+- **Rate limits.** Process-wide capacity-one token buckets and concurrency caps cover every attempt and redirect; quotas live in one code table, crates.io is limited to one request per second and Stack Exchange backoff delays its shared host bucket
+
+### Fixed
+- **HEAD responses.** A large advertised resource size no longer trips the body cap when no response body is transferred.
+
+### Not done
+- cargo fmt, clippy, test (55 tests), validate and schema --check pass; fake-clock tests verify spacing, shared buckets, concurrency and Stack Exchange backoff; no provider load test was run
+
+### Upgrading
+- No new settings; quotas are defined in engine::limits::QUOTAS.
+
 ## V0.1.25 (2026-10-17)
 
 Conditional HTTP requests preserve unchanged data.

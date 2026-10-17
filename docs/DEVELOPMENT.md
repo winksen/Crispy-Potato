@@ -59,6 +59,10 @@ Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no databas
 
 ## HTTP transport (V0.1.24)
 
+Since V0.1.26 all clients share a capacity-one token bucket and concurrency semaphore per hostname, including retries and redirects. `engine::limits::QUOTAS` holds the source/host table: conservative one-per-second defaults for known APIs, one concurrent request for crates.io, two for other hosts; unlisted hosts use 100 ms spacing and two slots. These are application limits, not advertised provider allowances. Cross-origin redirects drop authorization and cookies.
+
+Stack Exchange's typed `backoff` value delays the entire host (stricter than its per-method requirement), including callers already waiting. See [Stack Exchange throttling](https://api.stackexchange.com/docs/throttle) and [crates.io policies](https://crates.io/policies). Fake-clock tests cover spacing, sharing and concurrency. No settings were added.
+
 Since V0.1.25 `http_cache::get` sends stored ETag and Last-Modified validators and returns `Changed` or `Unchanged`. A caller must persist the returned cache update in the same transaction as accepted data; malformed or rolled-back imports therefore cannot poison the cache. `record_unchanged` commits a 304's validators and run counter without touching observations. Cache keys hash the URL and request headers, keeping credential-bearing URLs out of storage. No new settings.
 
 `engine::http::Client` uses reqwest 0.12 with rustls only, gzip and brotli decoding, a five-second connect timeout and a 30-second deadline per attempt (including body reads). Responses are limited to 20 MiB after decoding, both by declared length when available and while streaming. The User-Agent includes the crate version and repository URL.

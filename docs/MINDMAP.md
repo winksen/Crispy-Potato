@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.25` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.26` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
 
 ---
 
@@ -134,7 +134,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 
 - **One release, one commit**, titled `Update V0.1.N` with one bullet per change. The rules are in the [release index](RELEASES_0.1.md#how-each-release-is-made) and, since V0.1.2, in [CLAUDE.md](../CLAUDE.md).
 - **Each release** adds a [changelog](../CHANGELOG.md) entry, sets its row in the release index to ✅, updates this mindmap and bumps the version.
-- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.25 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
+- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.26 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
 - **Decisions D1–D9** in the release index are agreed: licenses, the web framework and tooling, the hosting shape, the secrets the owner provides, what the implementer may run, the tag name, the survey years and the project name.
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
 - **Contributing** (since V0.1.19): [CONTRIBUTING.md](../CONTRIBUTING.md) covers adding and editing entities, the sourcing rules (a source for anything disputable, preferred sources, no collected numbers, neutral tone, own words, no unreviewed AI text), the fit-rating rubric, the writing style and the review checklist. `.github/pull_request_template.md` carries the checklist; `.github/ISSUE_TEMPLATE/` has the *Request an entity* and *Report a data problem* forms (the latter's `entity` and `page` fields can be prefilled from the URL) and a link to private security reporting.
@@ -151,7 +151,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 53 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
+| Tests | `cargo test` | 55 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
@@ -219,3 +219,9 @@ Checks: cargo fmt, clippy, test (52 tests), validate, schema --check and cargo d
 **HTTP cache.** ETag and Last-Modified validators use hashed request keys, conditional headers and explicit acceptance transactions; a 304 increments the run unchanged count without rewriting observations
 
 Checks: cargo fmt, clippy, test (53 tests), validate, schema --check and sqlx prepare --check pass; a wiremock/Postgres test verifies conditional headers, delayed cache acceptance, unchanged row identity and run count
+
+### V0.1.26 — Shared host quotas and bounded concurrency.
+
+**Rate limits.** Process-wide capacity-one token buckets and concurrency caps cover every attempt and redirect; quotas live in one code table, crates.io is limited to one request per second and Stack Exchange backoff delays its shared host bucket
+
+Checks: cargo fmt, clippy, test (55 tests), validate and schema --check pass; fake-clock tests verify spacing, shared buckets, concurrency and Stack Exchange backoff; no provider load test was run

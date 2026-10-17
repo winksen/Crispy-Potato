@@ -10,3 +10,4 @@ pub mod observations;
 pub mod scaffold;
 pub mod schema;
 pub mod sync;
+pub mod untrusted;

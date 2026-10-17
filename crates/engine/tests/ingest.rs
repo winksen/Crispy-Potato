@@ -34,7 +34,7 @@ impl Source for Fake {
                 }],
                 facts: vec![ingest::Fact {
                     field: "developer".into(),
-                    value: serde_json::json!("Example"),
+                    value: serde_json::json!("<b>Example\u{202e}\n</b>"),
                 }],
                 observations: vec![Observation {
                     entity_id: entity.id.clone(),
@@ -82,6 +82,10 @@ async fn runner_isolates_failure_and_dry_run_writes_nothing(
             .fetch_one(&pool)
             .await?;
     assert_eq!(extra.0, 2);
+    let fact: (serde_json::Value,) = sqlx::query_as("SELECT value FROM facts")
+        .fetch_one(&pool)
+        .await?;
+    assert_eq!(fact.0, serde_json::json!("bExample/b"));
     assert!(
         ingest::run(&pool, &Fake, Some("missing"), false)
             .await

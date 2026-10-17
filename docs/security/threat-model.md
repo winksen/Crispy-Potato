@@ -67,8 +67,8 @@ Status: ✅ mitigated by a shipped release · 🔜 planned. *Release* names the 
 
 | # | Threat | Asset | Mitigation | Release | Status |
 |---|---|---|---|---|---|
-| T7 | A hostile or broken response (a huge body, deep nesting, control or right-to-left override characters, NaN or negative counts) that crashes the worker or corrupts stored data | A1, A2 | A 20 MiB response cap (V0.1.24); typed parsing, text length caps with control and bidi characters removed, range-checked numbers, failures scoped to one entity | V0.1.24, 🔒 V0.1.28 | 🔜 |
-| T8 | Source text stored as HTML and rendered on the site (stored XSS) | A4 | Source text is never stored as HTML and always rendered as text | 🔒 V0.1.28, 🔒 V0.1.134 | 🔜 |
+| T7 | A hostile or broken response (a huge body, deep nesting, control or right-to-left override characters, NaN or negative counts) that crashes the worker or corrupts stored data | A1, A2 | A 20 MiB response cap (V0.1.24); typed parsing, text length caps with control and bidi characters removed, range-checked numbers, failures scoped to one entity | V0.1.24, 🔒 V0.1.28 | ✅ |
+| T8 | Source text stored as HTML and rendered on the site (stored XSS) | A4 | Source text is never stored as HTML and always rendered as text | 🔒 V0.1.28, 🔒 V0.1.134 | Storage ✅; rendering planned |
 | T9 | A well-formed but wrong value (a buggy or compromised source) shown as fact | A1 | Plausibility checks quarantine values that fall or jump implausibly (V0.1.29); curated `overrides` replace wrong facts (V0.1.1, applied in V0.1.60) | V0.1.29, V0.1.60 | 🔜 |
 | T10 | The project gets blocked by a source for exceeding its limits, and data stops | A2 | Per-host rate limits and concurrency caps, `Retry-After` and `backoff` honored, an identifying User-Agent | V0.1.24, V0.1.26 | 🔜 |
 

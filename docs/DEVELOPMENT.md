@@ -63,6 +63,8 @@ Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no databas
 
 Dry runs print the batches they would store and write nothing, including no run or source rows. The Postgres fake-source test verifies a successful measurement, a failed second entity and a recorded partial run. Diagnostics store entity ids and fixed error categories, never response bodies or URLs. No settings added.
 
+Since V0.1.28 adapters parse response bytes with `untrusted::decode<T>` into source-specific structs. It enforces the 20 MiB cap and JSON recursion limit and returns fixed errors for missing fields and malformed JSON. The runner always sanitizes batches before either storage or dry-run output: source strings become plain text capped at 256 characters, with controls, bidi controls and angle brackets removed; identifiers are bounded; numbers must be finite and in range; dates must be full dates. Fact JSON is limited to depth 16 and 10,000 values; batches to 10,000 records. Bad responses fail only their entity. Future UI code must still render these fields as text.
+
 ## HTTP transport (V0.1.24)
 
 Since V0.1.26 all clients share a capacity-one token bucket and concurrency semaphore per hostname, including retries and redirects. `engine::limits::QUOTAS` holds the source/host table: conservative one-per-second defaults for known APIs, one concurrent request for crates.io, two for other hosts; unlisted hosts use 100 ms spacing and two slots. These are application limits, not advertised provider allowances. Cross-origin redirects drop authorization and cookies.

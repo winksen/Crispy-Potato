@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.28 (2026-10-17)
+
+Untrusted responses are bounded, typed and sanitized.
+
+### Added
+- **Source safety.** Typed JSON parsing keeps the body and recursion limits; the runner cleans text and bounds strings, structures, dates and numeric values before storage or previews, with fixed per-entity errors
+
+### Not done
+- cargo fmt, clippy, test (59 tests), validate and schema --check pass; hostile strings, bidi controls, missing fields, NaN, infinities, negative counts and deep JSON are tested; the runner stores sanitized facts
+
+### Upgrading
+- Source adapters must parse typed payloads through untrusted::decode; no new settings.
+
 ## V0.1.27 (2026-10-17)
 
 A source contract and transactional collection runner.

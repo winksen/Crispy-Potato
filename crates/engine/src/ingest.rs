@@ -124,7 +124,7 @@ pub async fn run(
         preview: Vec::new(),
     };
     for entity in entities.iter().filter(|e| source.applies(e)) {
-        let batch = match source.fetch(&context, entity).await {
+        let mut batch = match source.fetch(&context, entity).await {
             Ok(batch) => batch,
             Err(_) => {
                 report.errors.push(Failure {
@@ -134,6 +134,13 @@ pub async fn run(
                 continue;
             }
         };
+        if crate::untrusted::clean(&mut batch).is_err() {
+            report.errors.push(Failure {
+                entity: entity.id.clone(),
+                reason: "invalid source response",
+            });
+            continue;
+        }
         if batch
             .observations
             .iter()

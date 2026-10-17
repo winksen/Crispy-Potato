@@ -1,11 +1,10 @@
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
-use std::fs;
-
 use clap::{Parser, Subcommand};
 use engine::content::{self, Content};
-use engine::schema;
+use engine::{scaffold, schema};
 use model::Kind;
 
 #[derive(Parser)]
@@ -35,6 +34,16 @@ enum Command {
         #[arg(long)]
         check: bool,
     },
+    /// Start a new entity file from a template and take its id off planned.yaml.
+    New {
+        /// language, framework or runtime.
+        kind: Kind,
+        /// The new entity's id, such as spring-boot.
+        id: String,
+        /// Path to the content folder.
+        #[arg(long, default_value = "content")]
+        content: PathBuf,
+    },
 }
 
 fn main() -> ExitCode {
@@ -45,6 +54,29 @@ fn main() -> ExitCode {
             out,
             check,
         } => write_schemas(&content, &out, check),
+        Command::New { kind, id, content } => new_entity(&content, kind, &id),
+    }
+}
+
+fn new_entity(root: &Path, kind: Kind, id: &str) -> ExitCode {
+    match scaffold::new_entity(root, kind, id) {
+        Ok(created) => {
+            let file = format!("{}/{}/{id}.yaml", root.display(), kind.dir());
+            if created.was_planned {
+                println!("Wrote {file} and took \"{id}\" off planned.yaml.");
+            } else {
+                println!("Wrote {file}; \"{id}\" was not in planned.yaml.");
+            }
+            println!(
+                "Replace every {} in it, then run `cargo validate` to see which are left.",
+                content::PLACEHOLDER
+            );
+            ExitCode::SUCCESS
+        }
+        Err(err) => {
+            eprintln!("{err}");
+            ExitCode::FAILURE
+        }
     }
 }
 

@@ -7,7 +7,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
-use engine::{content, schema};
+use engine::{content, scaffold, schema};
 use model::Kind;
 use tempfile::TempDir;
 
@@ -116,8 +116,12 @@ fn problems(planned: &str, files: &[(&str, &str)]) -> Vec<String> {
 
 /// Every diagnostic for the fixture as the cli prints it: `file: message`.
 fn report(planned: &str, files: &[(&str, &str)]) -> Vec<String> {
-    let dir = fixture(planned, files);
-    match content::load(dir.path()) {
+    report_in(fixture(planned, files).path())
+}
+
+/// Every diagnostic for the content folder at `root`, as the cli prints it.
+fn report_in(root: &Path) -> Vec<String> {
+    match content::load(root) {
         Ok(_) => Vec::new(),
         Err(diags) => diags.iter().map(ToString::to_string).collect(),
     }
@@ -682,5 +686,172 @@ fn a_logo_slug_alone_is_not_an_id_to_collect_data_with() {
     assert_eq!(
         problems("", &[("languages/testlang.yaml", &both)]),
         Vec::<String>::new()
+    );
+}
+
+/// A planned list with comments, a `- id` list and a list on its section's line.
+const PLANNED: &str = "\
+# Planned ids.
+languages:
+  - otherlang
+  - testlang  # the one to create
+frameworks: [testframework, otherframework]
+runtimes:
+  # Runtimes.
+  - testruntime
+";
+
+/// A new entity file with every placeholder replaced by a valid value.
+fn filled(template: &str) -> String {
+    let replacements = [
+        ("name: TODO", "name: Testlang"),
+        (
+            "tagline: TODO",
+            "tagline: A thing that only exists in tests.",
+        ),
+        ("  TODO\n\nlinks:", "  It checks the validator.\n\nlinks:"),
+        (
+            "website: https://example.com/TODO",
+            "website: https://example.com",
+        ),
+        (
+            "docs: https://example.com/TODO",
+            "docs: https://example.com/docs",
+        ),
+        (
+            "repo: https://example.com/TODO",
+            "repo: https://github.com/example/testlang",
+        ),
+        ("wikidata: TODO", "wikidata: Q1"),
+        ("github: TODO", "github: example/testlang"),
+        ("stackoverflow_tag: TODO", "stackoverflow_tag: testlang"),
+        ("so_survey: TODO", "so_survey: Testlang"),
+        ("endoflife: TODO", "endoflife: testlang"),
+        ("simple_icons: TODO", "simple_icons: testlang"),
+        ("typing: [TODO]", "typing: [static]"),
+        ("memory: [TODO]", "memory: [gc]"),
+        ("execution: [TODO]", "execution: [compiled-native]"),
+        ("paradigms: [TODO]", "paradigms: [imperative]"),
+        ("concurrency: [TODO]", "concurrency: [threads]"),
+        ("targets: [TODO]", "targets: [linux]"),
+        ("ecosystem: TODO", "ecosystem: web-frontend"),
+        ("languages: [TODO]", "languages: [otherlang]"),
+        ("domain: TODO", "domain: systems"),
+        ("fit: TODO", "fit: good"),
+        ("note: TODO", "note: Used in tests."),
+        ("title: TODO", "title: A point"),
+        ("detail: TODO", "detail: The point, in detail."),
+        (
+            "choose_when:\n  - TODO\n  - TODO",
+            "choose_when:\n  - you need a test.\n  - you want another test.",
+        ),
+        ("curve: TODO", "curve: gentle"),
+        (
+            "url: https://example.com/TODO",
+            "url: https://example.com/learn",
+        ),
+        ("kind: TODO", "kind: docs"),
+        ("free: TODO", "free: true"),
+    ];
+    let mut text = template.to_owned();
+    for (from, to) in replacements {
+        text = text.replace(from, to);
+    }
+    text
+}
+
+#[test]
+fn new_entities_fail_only_on_their_placeholders_until_filled() {
+    for (kind, id) in [
+        (Kind::Language, "testlang"),
+        (Kind::Framework, "testframework"),
+        (Kind::Runtime, "testruntime"),
+    ] {
+        let dir = fixture(PLANNED, &[]);
+        let created = scaffold::new_entity(dir.path(), kind, id).unwrap();
+        assert!(created.was_planned);
+        assert_eq!(
+            created.path,
+            dir.path().join(kind.dir()).join(format!("{id}.yaml"))
+        );
+
+        let report = report_in(dir.path());
+        assert!(report.len() > 20, "{kind}: {report:#?}");
+        let file = format!("{}/{id}.yaml: ", kind.dir());
+        for line in &report {
+            assert!(
+                line.starts_with(&file) && line.ends_with(": replace the TODO placeholder"),
+                "{line}"
+            );
+        }
+
+        let template = fs::read_to_string(&created.path).unwrap();
+        let done = filled(&template);
+        assert!(
+            !done.contains(": TODO") && !done.contains("[TODO]"),
+            "{done}"
+        );
+        fs::write(&created.path, done).unwrap();
+        assert_eq!(report_in(dir.path()), Vec::<String>::new(), "{kind}");
+    }
+}
+
+#[test]
+fn new_entities_come_off_planned_yaml_and_its_comments_stay() {
+    let dir = fixture(PLANNED, &[]);
+    scaffold::new_entity(dir.path(), Kind::Language, "testlang").unwrap();
+    scaffold::new_entity(dir.path(), Kind::Framework, "testframework").unwrap();
+    assert_eq!(
+        fs::read_to_string(dir.path().join("planned.yaml")).unwrap(),
+        "\
+# Planned ids.
+languages:
+  - otherlang
+frameworks: [otherframework]
+runtimes:
+  # Runtimes.
+  - testruntime
+"
+    );
+
+    let unplanned = scaffold::new_entity(dir.path(), Kind::Language, "unplanned").unwrap();
+    assert!(!unplanned.was_planned);
+}
+
+#[test]
+fn new_entities_refuse_bad_ids_existing_files_and_other_kinds() {
+    let dir = fixture(PLANNED, &[("languages/testlang.yaml", LANGUAGE)]);
+    let refused = |kind, id| scaffold::new_entity(dir.path(), kind, id).unwrap_err();
+    for kind in [Kind::Language, Kind::Runtime] {
+        assert_eq!(
+            refused(kind, "testlang"),
+            "\"testlang\" already has a file: languages/testlang.yaml"
+        );
+    }
+    assert_eq!(
+        refused(Kind::Language, "Bad_Id"),
+        "\"Bad_Id\" is not a valid id; use lowercase letters, digits and single hyphens, like spring-boot"
+    );
+    assert!(refused(Kind::Language, "go-vs-rust").contains("contains \"vs\" as a word"));
+    assert_eq!(
+        refused(Kind::Runtime, "otherlang"),
+        "\"otherlang\" is planned as a language; run `cli new language otherlang`"
+    );
+    assert!(!dir.path().join("runtimes").exists());
+    assert_eq!(
+        fs::read_to_string(dir.path().join("planned.yaml")).unwrap(),
+        PLANNED
+    );
+}
+
+#[test]
+fn a_todo_left_in_a_finished_file_is_reported() {
+    let source = with_id("so_survey:\n    2022: Testlang.js\n    2023: Testlang").replace(
+        "tagline: A language that only exists in tests.",
+        "tagline: TODO",
+    );
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &source)]),
+        ["tagline: replace the TODO placeholder"]
     );
 }

@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::fmt;
+use std::str::FromStr;
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -36,6 +37,18 @@ impl fmt::Display for Kind {
             Kind::Framework => "framework",
             Kind::Runtime => "runtime",
         })
+    }
+}
+
+impl FromStr for Kind {
+    type Err = String;
+
+    /// Parses `language`, `framework` or `runtime`.
+    fn from_str(s: &str) -> Result<Self, String> {
+        Kind::ALL
+            .into_iter()
+            .find(|kind| kind.to_string() == s)
+            .ok_or_else(|| format!("\"{s}\" is not a kind; use language, framework or runtime"))
     }
 }
 

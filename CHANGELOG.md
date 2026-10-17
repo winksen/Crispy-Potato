@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.16 (2026-10-17)
+
+`cli new` starts an entity file from a commented template, and validation lists every `TODO` left in it.
+
+### Added
+- **`cli new <kind> <id>`**, run as `cargo new-entity language go`, writes `content/<kind>/<id>.yaml`: the schema line, every field with a comment explaining it, the allowed values of each trait and domain taken from `content/vocab/`, `TODO` where a value is needed, and the optional fields empty. It takes the id off `planned.yaml` line by line, so the file's comments stay, whether the id is on a `- id` line or in a `[a, b]` list. It refuses an invalid id, an id that already has a file of any kind, and an id planned as another kind (`"python" is planned as a language; run cli new language python`), and then writes nothing.
+- **Validation refuses any `TODO` left** in an entity file, by field and in the file's order (`strengths[0].title: replace the TODO placeholder`). While placeholders remain, nothing else is reported for that file, so a new file fails only on them; once they are filled, the usual checks apply. The id still counts as known, so other files can refer to it.
+- **`content::id_problem`**, the id rule (a slug, without `vs` as a word) shared by validation and `cli new`, and `Kind` parses from `language`, `framework` or `runtime`.
+- **Tests**: a new file of each kind fails only on its placeholders (36 for a language) and passes once they are filled; `planned.yaml` loses the ids from both list forms and keeps its comments; each refusal leaves the folder as it was; a `TODO` left in an otherwise finished file is the only problem reported; the finder reads fields in order, including integer keys, and ignores comments.
+
+### Upgrading
+- Nothing to do. Use `cargo new-entity <kind> <id>` to start an entity instead of copying an existing file.
+
 ## V0.1.15 (2026-10-17)
 
 Entities name their logo by its Simple Icons slug, so the web app can show it without the repository storing any SVG.

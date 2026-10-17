@@ -100,13 +100,8 @@ pub(super) fn check(
     for kind in Kind::ALL {
         for (i, id) in planned.ids(kind).iter().enumerate() {
             let field = format!("{}[{i}]", kind.dir());
-            if !is_slug(id) {
-                report.error(&field, format!("\"{id}\" is not a valid id; {SLUG_HINT}"));
-            } else if has_vs(id) {
-                report.error(
-                    &field,
-                    format!("\"{id}\" contains \"vs\" as a word; {VS_HINT}"),
-                );
+            if let Some(problem) = id_problem(id) {
+                report.error(&field, problem);
             }
             match known.get(id.as_str()) {
                 Some(Known {
@@ -145,14 +140,20 @@ pub(super) fn check(
     check_aliases(entities, planned, diags);
 }
 
+/// What is wrong with `id` as an entity id, if anything.
+pub fn id_problem(id: &str) -> Option<String> {
+    if !is_slug(id) {
+        Some(format!("\"{id}\" is not a valid id; {SLUG_HINT}"))
+    } else if has_vs(id) {
+        Some(format!("\"{id}\" contains \"vs\" as a word; {VS_HINT}"))
+    } else {
+        None
+    }
+}
+
 fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
-    if !is_slug(&e.id) {
-        r.error("id", format!("\"{}\" is not a valid id; {SLUG_HINT}", e.id));
-    } else if has_vs(&e.id) {
-        r.error(
-            "id",
-            format!("\"{}\" contains \"vs\" as a word; {VS_HINT}", e.id),
-        );
+    if let Some(problem) = id_problem(&e.id) {
+        r.error("id", problem);
     }
     let stem = r
         .file

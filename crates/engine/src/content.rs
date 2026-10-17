@@ -6,6 +6,7 @@
 //! nesting, anchors and alias expansion.
 
 mod check;
+mod placeholders;
 
 use std::collections::HashSet;
 use std::fmt;
@@ -21,6 +22,9 @@ use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_saphyr::Budget;
 use serde_saphyr::budget::{BudgetBreach, EnforcingPolicy};
+
+pub use check::id_problem;
+pub use placeholders::PLACEHOLDER;
 
 /// The largest file allowed anywhere under `content/`: 256 KiB.
 pub const MAX_FILE_BYTES: u64 = 256 * 1024;
@@ -377,6 +381,19 @@ impl<'a> Loader<'a> {
     fn read_entity(&mut self, path: &Path, folder_kind: Kind) -> Option<Entity> {
         let source = self.read(path)?;
         if !self.within_budget(path, &source) {
+            return None;
+        }
+
+        // A file `cli new` wrote that is still being filled in: report what is
+        // left rather than the type errors its placeholders would cause.
+        let left = placeholders::find(&source, yaml_options());
+        if !left.is_empty() {
+            for field in left {
+                self.diags.push(
+                    path,
+                    format!("{field}: replace the {PLACEHOLDER} placeholder"),
+                );
+            }
             return None;
         }
 

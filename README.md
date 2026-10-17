@@ -16,13 +16,19 @@ Early. The data model and content validation exist; the data collection engine, 
 
 ## Contributing content
 
-Entities are YAML files in `content/`. After editing one, run:
+Entities are YAML files in `content/`. To start a new one, run `cargo new-entity <kind> <id>`, for example:
+
+```bash
+cargo new-entity language go
+```
+
+It writes `content/languages/go.yaml` with every field, a comment on each and `TODO` placeholders, and takes `go` off `content/planned.yaml`. After filling it in, or after editing any entity, run:
 
 ```bash
 cargo validate
 ```
 
-It reports every problem with its file and field. See [docs/data-model.md](docs/data-model.md) for what each field means.
+It reports every problem with its file and field, including each `TODO` left. See [docs/data-model.md](docs/data-model.md) for what each field means.
 
 Editors that use the YAML language server (VS Code with the Red Hat YAML extension, for example) complete fields and allowed values and flag mistakes as you type: each entity file's first line points at its JSON Schema in `schemas/`. After changing a model type or a vocabulary, regenerate them with `cargo schema`.
 

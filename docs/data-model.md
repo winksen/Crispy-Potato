@@ -50,6 +50,18 @@ Each entity file starts with a line that points editors at its JSON Schema:
 
 The schemas in `schemas/` (`language`, `framework` and `runtime`) are generated from the model types by `cargo schema`, with the vocabulary values as enums, so editors complete fields and values and flag unknown fields. `cargo schema --check`, run in CI and by `cargo test`, fails when they are out of date.
 
+### Adding an entity
+
+`cargo new-entity <kind> <id>` (the cli's `new` command) starts the file:
+
+```bash
+cargo new-entity framework spring-boot
+```
+
+It writes `content/frameworks/spring-boot.yaml` with every field, a comment explaining each one and the allowed values of each trait, and `TODO` where a value is needed; optional fields are left empty. It takes the id off `planned.yaml` and keeps that file's comments. It refuses an invalid id, an id that already has a file, and an id `planned.yaml` lists under another kind.
+
+Validation refuses any value that still contains `TODO` and lists each one by field (`tagline: replace the TODO placeholder`). Until every placeholder is gone it reports nothing else for that file, so a new file fails only on its placeholders.
+
 ### Examples
 
 - [`content/languages/rust.yaml`](../content/languages/rust.yaml)
@@ -288,4 +300,5 @@ Run `cargo validate` from the repository root. It reports every problem at once,
   - aliases are unique.
 - **Samples:** every path exists under `content/samples/`.
 - **Overrides:** every override has a non-empty `reason`.
+- **Placeholders:** no value contains `TODO`.
 - **Limits:** content comes from pull requests and is read as untrusted input. Nothing under `content/` may be a symbolic link (or a Windows junction), no file may be larger than 256 KiB, and each YAML file must hold one document that nests at most 16 levels deep, with at most 16 anchors, 64 aliases and 50,000 values; alias expansion is capped while the file is read.

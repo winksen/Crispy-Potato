@@ -2,6 +2,7 @@
 
 pub mod content;
 pub mod db;
+pub mod http;
 pub mod observations;
 pub mod scaffold;
 pub mod schema;

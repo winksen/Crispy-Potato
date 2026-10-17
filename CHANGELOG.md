@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.24 (2026-10-17)
+
+A bounded retrying HTTP client for sources.
+
+### Added
+- **HTTP.** reqwest 0.12 with rustls, gzip and brotli, connect and body deadlines, a 20 MiB decoded cap, identifying User-Agent and three attempts with jitter and Retry-After; httpdate 1 and wiremock 0.6 added
+
+### Not done
+- cargo fmt, clippy, test (52 tests), validate, schema --check and cargo deny pass; wiremock covers 503 recovery, attempt limits, Retry-After, oversized bodies and timeouts; no live source adapter is built yet
+
+### Upgrading
+- Nothing to do; transport settings are code constants documented in DEVELOPMENT.md.
+
 ## V0.1.23 (2026-10-17)
 
 Separate reader, writer and migration privileges.

@@ -57,6 +57,12 @@ Remove-Item Env:SQLX_OFFLINE
 
 Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no database. CI checks metadata against a fresh migrated Postgres service; a bad column fails macro expansion.
 
+## HTTP transport (V0.1.24)
+
+`engine::http::Client` uses reqwest 0.12 with rustls only, gzip and brotli decoding, a five-second connect timeout and a 30-second deadline per attempt (including body reads). Responses are limited to 20 MiB after decoding, both by declared length when available and while streaming. The User-Agent includes the crate version and repository URL.
+
+There are three attempts total (the roadmap's “giving up after 3 tries” criterion), with exponential backoff starting at 500 ms plus jitter for 429, 5xx and timeouts. `Retry-After` seconds and HTTP dates are honored; delays over five minutes return a deferred error instead of retrying early. Other transport errors are not retried. Errors contain neither URLs nor response bodies. No new environment settings. Dependencies: reqwest 0.12, httpdate 1 and wiremock 0.6 for tests.
+
 ## Database roles (V0.1.23)
 
 After owner migrations, run `Get-Content scripts/db/roles.sql -Raw | docker compose exec -T db psql -U cp_owner -d crispy_potato -v ON_ERROR_STOP=1`. This idempotent script provisions `cp_reader` (SELECT) and `cp_writer` (SELECT/INSERT/UPDATE/DELETE and sequences), denies schema creation and temporary tables, and protects migration history. Run it in every database as the same owner that runs migrations so default privileges apply to future tables.

@@ -225,3 +225,4 @@ Run `cargo validate` from the repository root. It reports every problem at once,
   - aliases are unique.
 - **Samples:** every path exists under `content/samples/`.
 - **Overrides:** every override has a non-empty `reason`.
+- **Limits:** content comes from pull requests and is read as untrusted input. Nothing under `content/` may be a symbolic link (or a Windows junction), no file may be larger than 256 KiB, and each YAML file must hold one document that nests at most 16 levels deep, with at most 16 anchors, 64 aliases and 50,000 values; alias expansion is capped while the file is read.

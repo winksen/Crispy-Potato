@@ -3,7 +3,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
 use engine::content;
 use tempfile::TempDir;
@@ -266,4 +268,121 @@ fn extensions_are_matched_without_regard_to_case() {
         "languages/testlang.YAML: traits.memory[0]: unknown value \"magic\"",
     );
     assert_problem(&report, "languages/other.Yml: use the .yaml extension");
+}
+
+/// Nine levels of nine aliases: about 387 million strings once expanded.
+fn alias_bomb() -> String {
+    let mut yaml = String::from("lol0: &l0 [lol, lol, lol, lol, lol, lol, lol, lol, lol]\n");
+    for level in 1..9 {
+        let prev = level - 1;
+        let aliases = vec![format!("*l{prev}"); 9].join(", ");
+        yaml.push_str(&format!("lol{level}: &l{level} [{aliases}]\n"));
+    }
+    yaml
+}
+
+#[test]
+fn alias_bombs_are_refused_before_they_expand() {
+    let bomb = format!("{LANGUAGE}{}", alias_bomb());
+    let start = Instant::now();
+    let problems = problems("", &[("languages/testlang.yaml", &bomb)]);
+    assert!(
+        start.elapsed() < Duration::from_secs(5),
+        "took {:?}",
+        start.elapsed()
+    );
+    assert_eq!(
+        problems,
+        ["over the parser's limits for content files: it uses more than 64 aliases"]
+    );
+}
+
+#[test]
+fn deeply_nested_files_are_refused() {
+    let deep = format!(
+        "{LANGUAGE}notable_users: {}{}
+",
+        "[".repeat(40),
+        "]".repeat(40)
+    );
+    let problems = problems("", &[("languages/testlang.yaml", &deep)]);
+    assert_eq!(
+        problems,
+        ["over the parser's limits for content files: it nests deeper than 16 levels"]
+    );
+}
+
+#[test]
+fn files_over_256_kib_are_refused() {
+    let line = format!(
+        "# {}
+",
+        "x".repeat(1021)
+    );
+    let big = format!("{LANGUAGE}{}", line.repeat(257));
+    let start = Instant::now();
+    let report = report("", &[("languages/testlang.yaml", &big)]);
+    assert!(
+        start.elapsed() < Duration::from_secs(5),
+        "took {:?}",
+        start.elapsed()
+    );
+    assert_eq!(
+        report,
+        ["languages/testlang.yaml: is 258 KiB; files under content/ may be at most 256 KiB"]
+    );
+}
+
+#[test]
+fn symbolic_links_under_content_are_refused() {
+    let outside = tempfile::tempdir().unwrap();
+    let secret = outside.path().join("secret.txt");
+    fs::write(&secret, "not content").unwrap();
+    fs::write(outside.path().join("evil.yaml"), LANGUAGE).unwrap();
+
+    let source = format!(
+        "{LANGUAGE}samples: [testlang/hello.txt]
+"
+    );
+    let dir = fixture("", &[("languages/testlang.yaml", &source)]);
+    let link = dir.path().join("samples/testlang/hello.txt");
+    fs::create_dir_all(link.parent().unwrap()).unwrap();
+    if let Err(err) = symlink(&secret, &link, false) {
+        eprintln!("skipped: this system cannot create symbolic links ({err})");
+        return;
+    }
+    symlink(outside.path(), &dir.path().join("runtimes"), true).unwrap();
+
+    let start = Instant::now();
+    let report = match content::load(dir.path()) {
+        Ok(_) => Vec::new(),
+        Err(diags) => diags.iter().map(ToString::to_string).collect(),
+    };
+    assert!(
+        start.elapsed() < Duration::from_secs(5),
+        "took {:?}",
+        start.elapsed()
+    );
+    let link_message = "is a symbolic link; links are not allowed under content/, so nothing outside it can be read through them";
+    assert_eq!(
+        report,
+        [
+            format!("runtimes: {link_message}"),
+            format!("samples/testlang/hello.txt: {link_message}"),
+        ]
+    );
+}
+
+#[cfg(unix)]
+fn symlink(target: &Path, link: &Path, _dir: bool) -> io::Result<()> {
+    std::os::unix::fs::symlink(target, link)
+}
+
+#[cfg(windows)]
+fn symlink(target: &Path, link: &Path, dir: bool) -> io::Result<()> {
+    if dir {
+        std::os::windows::fs::symlink_dir(target, link)
+    } else {
+        std::os::windows::fs::symlink_file(target, link)
+    }
 }

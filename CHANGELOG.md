@@ -2,6 +2,24 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.10 (2026-10-17)
+
+Content files come from pull requests, so loading them now has hard limits: no links, no file over 256 KiB, and a YAML parser that refuses bombs before they expand.
+
+### Security
+- **No symbolic links under `content/`.** The loader walks the whole folder without following links and reports every symbolic link (and, on Windows, every junction) with "is a symbolic link; links are not allowed under content/…". Nothing is read through a refused link or from inside a linked folder, so a sample pointing outside the repository can never be stored by sync or served by the API.
+- **No file over 256 KiB.** Every file under `content/` is checked by size, and files are read at most 256 KiB at a time, so a file that grows while it is read is still refused (`MAX_FILE_BYTES` in the engine).
+- **A budget for the YAML parser.** Each file is scanned before it is deserialized: one document, at most 16 levels of nesting, 16 anchors, 64 aliases, 50,000 values and 1 MiB of text. A breach is reported in plain words ("over the parser's limits for content files: it uses more than 64 aliases"). While a file is deserialized, alias expansion is capped too (10,000 replayed values, 100 per anchor), which also covers the check of `kind` that reads a file before its full parse.
+
+### Added
+- **Five tests**: an alias bomb (nine levels of nine aliases), a file nested 40 levels deep, a 258 KiB file, a symbolic link to a sample next to a linked folder, each failing in well under a second with one clear message; and a smaller bomb that passes the scan but is stopped by the alias limits while being deserialized.
+
+### Not done
+- **The symbolic-link test skipped on this Windows machine**, which lacks the privilege to create links (os error 1314); it runs wherever links can be made, including CI on Linux. A Windows junction to a folder outside `content/` was checked by hand: it was refused and the file behind it was not read.
+
+### Upgrading
+- Nothing to do: the repository's content is far inside every limit. Content that used YAML anchors heavily, or a sample over 256 KiB, would now be refused.
+
 ## V0.1.9 (2026-10-17)
 
 Diagnostics print the same paths on every OS, and entity files with an uppercase extension are no longer skipped.

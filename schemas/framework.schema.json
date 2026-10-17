@@ -130,11 +130,15 @@
           ]
         },
         "so_survey": {
-          "description": "The name used in the Stack Overflow Developer Survey.",
-          "type": [
-            "string",
-            "null"
-          ]
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SurveyName"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The name used in the Stack Overflow Developer Survey."
         },
         "stackoverflow_tag": {
           "type": [
@@ -598,6 +602,25 @@
         "video"
       ],
       "type": "string"
+    },
+    "SurveyName": {
+      "anyOf": [
+        {
+          "description": "The same name in every survey year.",
+          "type": "string"
+        },
+        {
+          "additionalProperties": false,
+          "description": "Each name with the first survey year that used it, such as\n`{2022: React.js, 2023: React}`. A name applies until the next year listed.",
+          "patternProperties": {
+            "^\\d+$": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      ],
+      "description": "The name a technology has in the Stack Overflow Developer Survey, which\nsometimes renames technologies between years."
     }
   },
   "description": "A curated entity, as written in a `content/` YAML file.\n\n`T` holds the kind-specific traits. Files are parsed as `Entity<LanguageTraits>`,\n`Entity<FrameworkTraits>` and so on, then converted to `Entity<Traits>`.",

@@ -106,7 +106,7 @@ Write 2 to 4, each at most 140 characters. They describe situations in which a r
 | `github` | stars, contributors, commit activity, releases (`owner/repo`) |
 | `npm`, `pypi`, `crates`, `nuget`, `packagist`, `rubygems`, `pub`, `hex`, `maven` | registry downloads and versions |
 | `stackoverflow_tag` | question counts over time |
-| `so_survey` | the name used in the Stack Overflow Developer Survey |
+| `so_survey` | the name used in the Stack Overflow Developer Survey: one name, or a name per survey year (see below) |
 | `endoflife` | the endoflife.date product slug: support cycles, LTS dates |
 
 Each id is checked against its source's format, so a typo fails validation rather than a lookup:
@@ -125,8 +125,26 @@ Each id is checked against its source's format, so a typo fails validation rathe
 | `hex` | lowercase letters, digits and `_`, starting with a letter | `phoenix` |
 | `maven` | `group:artifact`, the group in dotted words | `org.springframework.boot:spring-boot` |
 | `stackoverflow_tag` | up to 35 lowercase letters, digits and `+ # . -` | `c#` |
-| `so_survey` | the survey's name, up to 60 characters, no leading or trailing spaces | `Rust` |
+| `so_survey` | the survey's name, up to 60 characters, no leading or trailing spaces; or a map of survey years (2011 to this year) to such names | `Rust` |
 | `endoflife` | lowercase letters and digits joined by single hyphens | `spring-boot` |
+
+### Survey names by year
+
+The survey sometimes renames a technology between years: React was "React.js" in the 2022 survey and "React" from 2023. Check the column headers of each year's results CSV, then write either one name, used for every year:
+
+```yaml
+so_survey: Rust
+```
+
+or each name with the first survey year that used it. A name applies until the next year listed, and years before the first one have no name:
+
+```yaml
+so_survey:
+  2022: React.js
+  2023: React
+```
+
+Years must be survey years: from 2011, when the survey started, to this year.
 
 ### Traits
 

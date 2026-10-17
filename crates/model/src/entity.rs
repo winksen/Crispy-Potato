@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fmt;
 
 use schemars::JsonSchema;
@@ -171,17 +172,19 @@ pub struct ExternalIds {
     pub maven: Option<String>,
     pub stackoverflow_tag: Option<String>,
     /// The name used in the Stack Overflow Developer Survey.
-    pub so_survey: Option<String>,
+    pub so_survey: Option<SurveyName>,
     /// The endoflife.date product slug.
     pub endoflife: Option<String>,
 }
 
 impl ExternalIds {
     pub fn is_empty(&self) -> bool {
-        self.iter().next().is_none()
+        self.iter().next().is_none() && self.so_survey.is_none()
     }
 
-    /// Each id that is set, with its field name as written in content files.
+    /// Each id written as a single string that is set, with its field name as
+    /// written in content files. `so_survey`, which may hold a name per year,
+    /// is left out.
     pub fn iter(&self) -> impl Iterator<Item = (&'static str, &str)> {
         let ExternalIds {
             wikidata,
@@ -196,7 +199,7 @@ impl ExternalIds {
             hex,
             maven,
             stackoverflow_tag,
-            so_survey,
+            so_survey: _,
             endoflife,
         } = self;
         [
@@ -212,11 +215,36 @@ impl ExternalIds {
             ("hex", hex),
             ("maven", maven),
             ("stackoverflow_tag", stackoverflow_tag),
-            ("so_survey", so_survey),
             ("endoflife", endoflife),
         ]
         .into_iter()
         .filter_map(|(field, id)| Some((field, id.as_deref()?)))
+    }
+}
+
+/// The name a technology has in the Stack Overflow Developer Survey, which
+/// sometimes renames technologies between years.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(untagged)]
+pub enum SurveyName {
+    /// The same name in every survey year.
+    One(String),
+    /// Each name with the first survey year that used it, such as
+    /// `{2022: React.js, 2023: React}`. A name applies until the next year listed.
+    ByYear(BTreeMap<u16, String>),
+}
+
+impl SurveyName {
+    /// The name in the survey of `year`, or `None` for a year before the first
+    /// one listed.
+    pub fn for_year(&self, year: u16) -> Option<&str> {
+        match self {
+            SurveyName::One(name) => Some(name),
+            SurveyName::ByYear(names) => names
+                .range(..=year)
+                .next_back()
+                .map(|(_, name)| name.as_str()),
+        }
     }
 }
 
@@ -389,4 +417,25 @@ impl Overrides {
 pub struct Override<T> {
     pub value: T,
     pub reason: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn survey_names_apply_from_their_year_until_the_next_one() {
+        let one = SurveyName::One("Rust".into());
+        assert_eq!(one.for_year(2011), Some("Rust"));
+        assert_eq!(one.for_year(2025), Some("Rust"));
+
+        let by_year = SurveyName::ByYear(BTreeMap::from([
+            (2022, "React.js".to_owned()),
+            (2023, "React".to_owned()),
+        ]));
+        assert_eq!(by_year.for_year(2021), None);
+        assert_eq!(by_year.for_year(2022), Some("React.js"));
+        assert_eq!(by_year.for_year(2023), Some("React"));
+        assert_eq!(by_year.for_year(2025), Some("React"));
+    }
 }

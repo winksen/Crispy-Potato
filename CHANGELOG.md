@@ -2,6 +2,22 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.14 (2026-10-17)
+
+`ids.so_survey` takes one name or a name per survey year, because the Stack Overflow survey renames technologies between years.
+
+### Added
+- **A name per survey year.** `so_survey` is either one name, as before, or a map of years to names, each applying from its year until the next one listed (`model::SurveyName`, with `for_year` to look a name up). Validation reports a year outside the survey's range (2011, its first year, to this year), an empty map, and a name in the wrong format with its year (`ids.so_survey.2023`). The JSON Schemas accept both forms.
+- **React's survey names by year**: "React.js" in the 2022 survey and "React" from 2023, as the survey's own result pages for 2022 to 2025 show. Rust is "Rust" in every year and keeps one name.
+- **The data model** explains both forms, with React as the example.
+- **Tests**: `for_year` before, at and after each listed year; one name, a map, and the range's first and last years parse; 2010, next year, an empty map and a malformed name are each reported once.
+
+### Not done
+- **The CSV headers themselves were not read.** React's and Rust's names were checked against the survey's published result pages for 2022 to 2025 (2023 to 2025 are the years decision D8 imports); the import in V0.1.70 lists any name that matches no column.
+
+### Upgrading
+- Nothing to do: a single name still works. Code reading `ExternalIds::so_survey` gets a `SurveyName` instead of a `String`, and `ExternalIds::iter` no longer lists it.
+
 ## V0.1.13 (2026-10-17)
 
 Every entity says when to choose it, in 2 to 4 short statements that compare pages will show side by side.

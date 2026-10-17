@@ -8,7 +8,9 @@ use std::fmt::Display;
 use std::ops::RangeInclusive;
 use std::path::{Component, Path, PathBuf};
 
-use model::{Entity, Fit, Kind, PartialDate, Planned, Point, Terms, Traits, Url, Vocab};
+use model::{
+    Entity, Fit, Kind, PartialDate, Planned, Point, SurveyName, Terms, Traits, Url, Vocab,
+};
 
 use super::Diags;
 
@@ -20,6 +22,8 @@ const SLUG_HINT: &str = "use lowercase letters, digits and single hyphens, like 
 const VS_HINT: &str = "compare URLs use it to separate ids, as in /compare/go-vs-rust";
 /// No programming language or framework predates the first programmable computers.
 const EARLIEST_YEAR: u16 = 1940;
+/// The Stack Overflow Developer Survey has run every year since 2011.
+const FIRST_SURVEY_YEAR: u16 = 2011;
 
 /// An id that other entities may refer to: an entity with a file, or a planned one.
 struct Known<'a> {
@@ -31,6 +35,7 @@ struct Context<'a> {
     known: &'a HashMap<&'a str, Known<'a>>,
     vocab: &'a Vocab,
     samples: PathBuf,
+    this_year: u16,
     /// Dates may be at most a year ahead, for announced milestones.
     latest_year: u16,
 }
@@ -125,11 +130,13 @@ pub(super) fn check(
         }
     }
 
+    let this_year = model::current_year();
     let ctx = Context {
         known: &known,
         vocab,
         samples: root.join("samples"),
-        latest_year: model::current_year().saturating_add(1),
+        this_year,
+        latest_year: this_year.saturating_add(1),
     };
     for (file, entity) in entities {
         check_entity(entity, &ctx, &mut Report { file, diags });
@@ -184,7 +191,7 @@ fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
         http_url(r, "links.repo", url);
     }
 
-    check_ids(e, r);
+    check_ids(e, ctx, r);
     check_traits(e, ctx, r);
     check_domains(e, ctx, r);
     check_points(r, "strengths", &e.strengths);
@@ -242,7 +249,7 @@ fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
     }
 }
 
-fn check_ids(e: &Entity, r: &mut Report) {
+fn check_ids(e: &Entity, ctx: &Context, r: &mut Report) {
     let ids = &e.ids;
     if ids.is_empty() {
         r.error(
@@ -251,12 +258,40 @@ fn check_ids(e: &Entity, r: &mut Report) {
         );
     }
     for (field, id) in ids.iter() {
-        if let Some(expected) = ids::problem(field, id) {
-            r.error(
-                format!("ids.{field}"),
-                format!("\"{id}\" is not {expected}"),
-            );
+        external_id(r, field, format!("ids.{field}"), id);
+    }
+    match &ids.so_survey {
+        None => {}
+        Some(SurveyName::One(name)) => external_id(r, "so_survey", "ids.so_survey", name),
+        Some(SurveyName::ByYear(names)) => {
+            if names.is_empty() {
+                r.error(
+                    "ids.so_survey",
+                    "list at least one survey year, or write the name alone",
+                );
+            }
+            for (year, name) in names {
+                let field = format!("ids.so_survey.{year}");
+                if !(FIRST_SURVEY_YEAR..=ctx.this_year).contains(year) {
+                    r.error(
+                        &field,
+                        format!(
+                            "{year} is not a survey year; the survey has run every year from \
+                             {FIRST_SURVEY_YEAR} to {}",
+                            ctx.this_year
+                        ),
+                    );
+                }
+                external_id(r, "so_survey", field, name);
+            }
         }
+    }
+}
+
+/// Reports `id` if it doesn't have the format of the ids under `ids.<kind>`.
+fn external_id(r: &mut Report, kind: &str, field: impl Display, id: &str) {
+    if let Some(expected) = ids::problem(kind, id) {
+        r.error(field, format!("\"{id}\" is not {expected}"));
     }
 }
 

@@ -636,3 +636,45 @@ fn choose_when_has_two_to_four_short_statements() {
         "missing field `choose_when`",
     );
 }
+
+#[test]
+fn survey_names_are_one_name_or_a_name_per_year() {
+    let this_year = model::current_year();
+    let valid = [
+        "so_survey: Testlang".to_owned(),
+        "so_survey:\n    2022: Testlang.js\n    2023: Testlang".to_owned(),
+        format!("so_survey:\n    2011: Old Testlang\n    {this_year}: Testlang"),
+    ];
+    for line in &valid {
+        let problems = problems("", &[("languages/testlang.yaml", &with_id(line))]);
+        assert_eq!(problems, Vec::<String>::new(), "{line}");
+    }
+
+    let next_year = this_year + 1;
+    let invalid = [
+        (
+            "so_survey:\n    2010: Testlang".to_owned(),
+            format!(
+                "ids.so_survey.2010: 2010 is not a survey year; the survey has run every year from 2011 to {this_year}"
+            ),
+        ),
+        (
+            format!("so_survey:\n    {next_year}: Testlang"),
+            format!("ids.so_survey.{next_year}: {next_year} is not a survey year"),
+        ),
+        (
+            "so_survey: {}".to_owned(),
+            "ids.so_survey: list at least one survey year, or write the name alone".to_owned(),
+        ),
+        (
+            "so_survey:\n    2023: \" Testlang\"".to_owned(),
+            r#"ids.so_survey.2023: " Testlang" is not the name the Stack Overflow survey uses"#
+                .to_owned(),
+        ),
+    ];
+    for (line, expected) in &invalid {
+        let problems = problems("", &[("languages/testlang.yaml", &with_id(line))]);
+        assert_eq!(problems.len(), 1, "{line}: {problems:#?}");
+        assert_problem(&problems, expected);
+    }
+}

@@ -21,7 +21,10 @@ ids:
   github: facebook/react
   npm: react
   stackoverflow_tag: reactjs
-  so_survey: React
+  # "React.js" in the 2022 survey, "React" since 2023.
+  so_survey:
+    2022: React.js
+    2023: React
   endoflife: react
 
 traits:

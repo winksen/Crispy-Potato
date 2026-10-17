@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.31 (2026-10-17)
+
+Credentials are redacted and missing secrets skip collection.
+
+### Added
+- **Secrets.** secrecy 0.10 stores GitHub and Stack Exchange credentials loaded from environment or bounded secret files; settings and authorization headers redact values, and missing credentials produce recorded skipped runs with warnings
+
+### Not done
+- cargo fmt, clippy, test (69 tests), validate, schema --check, sqlx prepare --check and cargo deny pass; tests cover redaction, file loading, precedence and skipped status without credentials
+
+### Upgrading
+- Export GITHUB_TOKEN and STACKEXCHANGE_KEY or their _FILE paths; missing credentials skip those sources without blocking other sources.
+
 ## V0.1.30 (2026-10-17)
 
 Collection status separates attempts from successful freshness.

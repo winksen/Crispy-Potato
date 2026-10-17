@@ -29,6 +29,10 @@ Every new application setting must be documented here when introduced.
 | `POSTGRES_PORT` | Compose | `5432`; localhost port published for Postgres |
 | `DATABASE_URL` | CLI / sqlx tests | Required for database commands; Postgres connection URL; use owner credentials for migrations and a disposable local owner database for tests |
 | `API_DATABASE_URL` | API reader connection | Required for reader connections; use `cp_reader`, never the writer or owner; no fallback |
+| `GITHUB_TOKEN` | Settings / GitHub sources | Optional fine-grained public read-only token; missing means skipped |
+| `GITHUB_TOKEN_FILE` | Settings | Optional UTF-8 secret file, at most 16 KiB; used when the environment token is empty or absent |
+| `STACKEXCHANGE_KEY` | Settings / Stack Exchange sources | Optional API key; missing means skipped |
+| `STACKEXCHANGE_KEY_FILE` | Settings | Optional UTF-8 secret file, at most 16 KiB; used when the environment key is empty or absent |
 | `SQLX_OFFLINE` | sqlx macros | `true` in `.cargo/config.toml`; builds use committed `.sqlx/` metadata. Set `false` only when preparing/checking against a migrated database |
 
 The container's user and database are fixed as `cp_owner` and `crispy_potato`. Content-only commands need no database.
@@ -58,6 +62,8 @@ Remove-Item Env:SQLX_OFFLINE
 Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no database. CI checks metadata against a fresh migrated Postgres service; a bad column fails macro expansion.
 
 ## Freshness status (V0.1.30)
+
+Since V0.1.31 credentials use `secrecy` 0.10 containers. Settings Debug/Display and sensitive GitHub headers redact them. Nonempty environment values take precedence over files; surrounding whitespace is trimmed, unreadable files are configuration errors with no file contents or paths printed. The runner records a missing-credential source as `skipped` with a warning, visible in `cli status`, without attempting entities. Stack Exchange keys are query parameters by its API design: never log whole request URLs. HTTP diagnostics are fixed categories; cache keys hash URLs and headers.
 
 After applying migration 0003, `cli status` prints JSON grouped by source: `source`, `schedule_seconds`, `last_run`, `finished_at`, `status`, `failures` and `entities`. Each entity has `last_attempt`, `last_success`, `failure` and `stale`. A missing success or a success older than twice the schedule is stale; a later failed attempt does not refresh it. Retired entities are omitted. Sources with no run have null run fields; only sources registered by a real run and entities attempted by that source are listed. A successful 304 refreshes success without rewriting observations. Dry runs change neither timestamp. No new settings.
 

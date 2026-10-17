@@ -5,7 +5,7 @@ members = ["crates/*"]
 [workspace.package]
 # The only place the version is written. Every release bumps it, and a test in
 # crates/cli/tests/version.rs checks it against the newest CHANGELOG.md entry.
-version = "0.1.30"
+version = "0.1.31"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 publish = false
@@ -36,4 +36,5 @@ sha2 = "0.10"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "gzip", "brotli", "json"] }
 httpdate = "1"
 wiremock = "0.6"
+secrecy = "0.10"
 url = { version = "2.5", features = ["serde"] }

@@ -19,9 +19,19 @@ pub struct SourceInfo {
 pub struct Context<'a> {
     pub pool: &'a PgPool,
     pub http: &'a Client,
+    pub settings: &'a crate::settings::Settings,
 }
 pub trait Source: Send + Sync {
     fn info(&self) -> SourceInfo;
+    fn required_secret(&self) -> Option<crate::settings::RequiredSecret> {
+        match self.info().id {
+            "github" => Some(crate::settings::RequiredSecret::GitHub),
+            "stackoverflow" | "stackexchange" => {
+                Some(crate::settings::RequiredSecret::StackExchange)
+            }
+            _ => None,
+        }
+    }
     fn applies(&self, entity: &Entity) -> bool;
     fn fetch<'a>(&'a self, context: &'a Context<'a>, entity: &'a Entity) -> FetchFuture<'a>;
 }
@@ -80,6 +90,7 @@ pub struct Report {
     pub errors: Vec<Failure>,
     pub preview: Vec<(String, Batch)>,
     pub held: Vec<crate::quality::Held>,
+    pub warnings: Vec<&'static str>,
 }
 
 pub async fn run(
@@ -87,6 +98,17 @@ pub async fn run(
     source: &dyn Source,
     entity_id: Option<&str>,
     dry_run: bool,
+) -> Result<Report, Error> {
+    let settings = crate::settings::Settings::load()?;
+    run_with_settings(pool, source, entity_id, dry_run, &settings).await
+}
+
+pub async fn run_with_settings(
+    pool: &PgPool,
+    source: &dyn Source,
+    entity_id: Option<&str>,
+    dry_run: bool,
+    settings: &crate::settings::Settings,
 ) -> Result<Report, Error> {
     let info = source.info();
     let rows = sqlx::query!("SELECT document FROM entities WHERE NOT retired AND ($1::text IS NULL OR id=$1) ORDER BY id", entity_id).fetch_all(pool).await?;
@@ -111,7 +133,11 @@ pub async fn run(
         )
     };
     let http = Client::new()?;
-    let context = Context { pool, http: &http };
+    let context = Context {
+        pool,
+        http: &http,
+        settings,
+    };
     let mut report = Report {
         run_id,
         status: "success",
@@ -120,7 +146,21 @@ pub async fn run(
         errors: Vec::new(),
         preview: Vec::new(),
         held: Vec::new(),
+        warnings: Vec::new(),
     };
+    if source
+        .required_secret()
+        .is_some_and(|secret| !settings.has(secret))
+    {
+        report.status = "skipped";
+        report
+            .warnings
+            .push("required credential is missing; source skipped");
+        if let Some(id) = run_id {
+            sqlx::query!("UPDATE ingestion_runs SET finished_at=now(),status='skipped',errors='[{\"reason\":\"required credential is missing\"}]' WHERE id=$1", id).execute(pool).await?;
+        }
+        return Ok(report);
+    }
     for entity in entities.iter().filter(|e| source.applies(e)) {
         if !dry_run {
             crate::freshness::attempt(pool, &entity.id, info.id).await?;

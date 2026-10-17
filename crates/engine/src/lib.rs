@@ -11,5 +11,6 @@ pub mod observations;
 pub mod quality;
 pub mod scaffold;
 pub mod schema;
+pub mod settings;
 pub mod sync;
 pub mod untrusted;

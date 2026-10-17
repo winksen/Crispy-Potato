@@ -87,7 +87,7 @@ Status: ✅ mitigated by a shipped release · 🔜 planned. *Release* names the 
 
 | # | Threat | Asset | Mitigation | Release | Status |
 |---|---|---|---|---|---|
-| T17 | A secret leaks through logs, error bodies, `Debug` output or a logged URL | A3 | Secrets held in `secrecy` types that redact themselves, read from the environment or `*_FILE`, request URLs never logged whole | 🔒 V0.1.31 | 🔜 |
+| T17 | A secret leaks through logs, error bodies, `Debug` output or a logged URL | A3 | Secrets held in `secrecy` types that redact themselves, read from the environment or `*_FILE`, request URLs never logged whole | 🔒 V0.1.31 | ✅ |
 | T18 | `WEB_API_KEY` or `API_URL` ends up in the browser bundle, letting anyone skip the rate limits | A2, A3 | The API client runs on the server only, and build checks fail when a server setting appears in client assets | V0.1.100, 🔒 V0.1.135 | 🔜 |
 | T19 | A compromised API process writes or drops data | A1 | The API connects as `cp_reader` (SELECT only); sync and the worker as `cp_writer` (no DDL); migrations as the owner | 🔒 V0.1.23 | ✅ |
 | T20 | Containers running as root widen a compromise | A1, A3 | Distroless images running as a non-root user | V0.1.137, V0.1.143 | 🔜 |

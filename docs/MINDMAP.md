@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.30` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.31` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
 
 ---
 
@@ -56,6 +56,7 @@ mindmap
       Threat model with 24 threats
       Untrusted content limits
       Reader and writer database roles
+      Redacted environment or file-backed secrets
       Private vulnerability reports
     Quality
       Content and Postgres integration tests
@@ -112,7 +113,7 @@ flowchart LR
 
 **Schemas** (since V0.1.12): `engine::schema` generates a draft-07 JSON Schema per kind from the model types (which derive `JsonSchema`), fixes `kind` to the folder's kind and turns each vocabulary into an enum with descriptions; `content::load_vocab` reads only the vocabularies for it. `cargo schema --check` fails when the committed files are stale.
 
-Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `serde_json`, `sqlx`, `tokio`, `sha2`, `reqwest`, `httpdate` and `tempfile`; `wiremock` in tests. Storage and collection modules are described in the release sections below.
+Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `serde_json`, `sqlx`, `tokio`, `sha2`, `reqwest`, `httpdate`, `secrecy` and `tempfile`; `wiremock` in tests. Storage and collection modules are described in the release sections below.
 
 ## 4. Validation rules
 
@@ -135,7 +136,7 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 
 - **One release, one commit**, titled `Update V0.1.N` with one bullet per change. The rules are in the [release index](RELEASES_0.1.md#how-each-release-is-made) and, since V0.1.2, in [CLAUDE.md](../CLAUDE.md).
 - **Each release** adds a [changelog](../CHANGELOG.md) entry, sets its row in the release index to ✅, updates this mindmap and bumps the version.
-- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.30 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
+- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.31 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
 - **Decisions D1–D9** in the release index are agreed: licenses, the web framework and tooling, the hosting shape, the secrets the owner provides, what the implementer may run, the tag name, the survey years and the project name.
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
 - **Contributing** (since V0.1.19): [CONTRIBUTING.md](../CONTRIBUTING.md) covers adding and editing entities, the sourcing rules (a source for anything disputable, preferred sources, no collected numbers, neutral tone, own words, no unreviewed AI text), the fit-rating rubric, the writing style and the review checklist. `.github/pull_request_template.md` carries the checklist; `.github/ISSUE_TEMPLATE/` has the *Request an entity* and *Report a data problem* forms (the latter's `entity` and `page` fields can be prefilled from the URL) and a link to private security reporting.
@@ -152,7 +153,7 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 66 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
+| Tests | `cargo test` | 69 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
@@ -250,3 +251,9 @@ Checks: cargo fmt, clippy, test (65 tests), validate, schema --check and sqlx pr
 **Freshness.** Migration 0003 tracks last attempt, success and failure per entity/source; the runner updates them and cli status lists each source run, failures and entities stale beyond twice their schedule
 
 Checks: cargo fmt, clippy, test (66 tests), validate, schema --check and sqlx prepare --check pass; Postgres tests verify missing, recent and stale successes and that failures do not refresh data
+
+### V0.1.31 — Credentials are redacted and missing secrets skip collection.
+
+**Secrets.** secrecy 0.10 stores GitHub and Stack Exchange credentials loaded from environment or bounded secret files; settings and authorization headers redact values, and missing credentials produce recorded skipped runs with warnings
+
+Checks: cargo fmt, clippy, test (69 tests), validate, schema --check, sqlx prepare --check and cargo deny pass; tests cover redaction, file loading, precedence and skipped status without credentials

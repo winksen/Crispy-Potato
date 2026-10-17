@@ -23,9 +23,16 @@ jobs:
         id: links
         continue-on-error: true
         run: cargo run --quiet --locked -p cli -- check-links > link-report.json
+      - name: Verify external identifiers
+        id: identifiers
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.COLLECTION_GITHUB_TOKEN }}
+          STACKEXCHANGE_KEY: ${{ secrets.STACKEXCHANGE_KEY }}
+        run: cargo run --quiet --locked -p cli -- verify-ids > id-report.json
       - name: Update the single health issue
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: python scripts/checks/weekly.py link-report.json
+        run: python scripts/checks/weekly.py link-report.json id-report.json

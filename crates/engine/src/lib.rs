@@ -15,3 +15,4 @@ pub mod schema;
 pub mod settings;
 pub mod sync;
 pub mod untrusted;
+pub mod verify_ids;

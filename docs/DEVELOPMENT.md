@@ -1,10 +1,16 @@
 # Local development
 
-## Live content checks (V0.1.32)
+## Live content checks (V0.1.32–V0.1.33)
 
 `cargo run -p cli -- check-links` validates content then checks every URL-valued field, including nested sources and learning resources. It uses HEAD with GET fallback, eight concurrent checks, the shared two-per-host cap (or stricter provider limit), and a ten-second total deadline per URL. It reports HTTP failures, timeouts and redirects to a different hostname with the content-relative file and field. Output is JSON (`checked`, `problems`, `skipped`); any problem exits nonzero. URLs and response bodies are not logged. No database or credentials are needed.
 
 `.github/workflows/content-health.yml` runs weekly and by manual dispatch with `contents: read` and `issues: write`. It creates or updates one bot-owned **Content health checks** issue, closes it when clean and reopens the same issue on regression. It does not run on pull requests. The workflow has not run remotely until pushed; local checks never create issues.
+
+`cargo run -p cli -- verify-ids` validates content then verifies each source identifier against its official API: GitHub, npm, PyPI, crates.io, NuGet, Packagist, RubyGems, pub.dev, Hex, Maven Central, Wikidata, Stack Overflow and endoflife.date v1. Requests run sequentially through shared host limits, with a 30-second total deadline per identifier. Missing ids, unexpected responses, archived GitHub repositories and renamed repositories (including the new name) report the content file and `ids.<provider>` field. PyPI names are normalized per its package-name rules; scoped npm names and tags are URL-encoded.
+
+Wikidata must have a non-deprecated `instance of` (`P31`) software class. The checker follows `subclass of` (`P279`) with cycle detection, at most 32 classes and five levels; exceeding these limits reports an unverified classification. Software (`Q7397`), software library (`Q188860`), software framework (`Q271680`) and programming language (`Q9143`) are accepted roots. Programming languages are explicit because Wikidata models languages separately from their software implementations. Survey labels are checked against survey data in V0.1.70; Simple Icons slugs remain format-validated until the web package check in V0.1.102.
+
+The command uses the same JSON report and exit convention as `check-links`. Missing GitHub/Stack Exchange credentials produce `skipped` entries (decision D5), not verified ids; `checked` counts attempted ids only. The weekly issue includes these skips even if all attempted checks pass. Supply the existing environment/file settings locally. In GitHub, set repository secrets `COLLECTION_GITHUB_TOKEN` (public read-only token) and `STACKEXCHANGE_KEY`; the issue-writing workflow token is kept separate. Neither command needs a database, stores observations, or prints credentials or response bodies.
 
 Install Rust through rustup and Docker with Compose. Run commands from the repository root.
 

@@ -16,6 +16,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Verify external identifiers; missing credentials are reported as skipped.
+    VerifyIds {
+        #[arg(long, default_value = "content")]
+        content: PathBuf,
+    },
     /// Check content URLs, with a ten-second deadline per URL.
     CheckLinks {
         #[arg(long, default_value = "content")]
@@ -83,6 +88,32 @@ enum QuarantineAction {
 #[tokio::main]
 async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::VerifyIds { content } => {
+            let settings = match engine::settings::Settings::load() {
+                Ok(settings) => settings,
+                Err(error) => {
+                    eprintln!("{error}");
+                    return ExitCode::FAILURE;
+                }
+            };
+            match engine::verify_ids::check(&content, &settings).await {
+                Ok(report) => match serde_json::to_string_pretty(&report) {
+                    Ok(json) => {
+                        println!("{json}");
+                        if report.problems.is_empty() {
+                            ExitCode::SUCCESS
+                        } else {
+                            ExitCode::FAILURE
+                        }
+                    }
+                    Err(_) => ExitCode::FAILURE,
+                },
+                Err(_) => {
+                    eprintln!("ID verification failed");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::CheckLinks { content } => {
             let links = match engine::links::collect(&content) {
                 Ok(links) => links,

@@ -15,6 +15,8 @@ You can also help by [reporting a data problem](https://github.com/winksen/Crisp
 | `cargo new-entity <kind> <id>` | Starts an entity file from a template and takes its id off `planned.yaml` |
 | `cargo validate` | Checks every content file and lists every problem with its file and field |
 | `cargo schema` | Regenerates the editor schemas after a model type or a vocabulary changes |
+| `cargo run -p cli -- check-links` | Checks live URLs and reports broken links and host changes |
+| `cargo run -p cli -- verify-ids` | Checks source ids; missing GitHub/Stack Exchange credentials are reported as skipped |
 | `cargo test` | Runs the tests, including the content checks |
 
 ## Adding an entity
@@ -35,7 +37,8 @@ You can also help by [reporting a data problem](https://github.com/winksen/Crisp
    - **notable users** each have a source in which the user says so themselves;
    - a **code sample** is short, runs as shown, and is your own work.
 4. **Run `cargo validate`** until it reports nothing. While a `TODO` is left, it lists only the placeholders.
-5. **Open a pull request.** The template has the checklist reviewers use; tick what you have done and put your sources for fit ratings in its description.
+5. **Run the live checks** above and resolve problems. Report any credential skips honestly; [development settings](docs/DEVELOPMENT.md#settings) explain optional credentials. These checks need network access but no database.
+6. **Open a pull request.** The template has the checklist reviewers use; tick what you have done and put your sources for fit ratings in its description.
 
 ## Editing an entity
 

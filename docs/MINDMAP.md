@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.32` (2026-10-17). Postgres development environment, curated storage, migrations, content tooling and validation are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.33` (2026-10-17). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -28,11 +28,12 @@ mindmap
       Code samples
     Crates
       model: the data types
-      engine: validation, Postgres pool and transactional sync
-      cli: validate, schema, new, migrate, sync, ingest and --version
+      engine: validation, Postgres sync and collection framework
+      cli: content checks, migrations, sync, ingestion and status
     Validation
       Schema and unknown fields
       15 external id formats
+      Live links and source identifier checks
       Survey names by year
       Plausible years, ordered timelines
       File names and folders
@@ -63,9 +64,9 @@ mindmap
       fmt, clippy and validate
       No unsafe, no unwrap outside tests
       CI on every push and pull request
+      Weekly links and external ID health report
       cargo deny and Dependabot
     Not built yet
-      Provider source adapters and HTTP API
       Source adapters
       HTTP API
       Web app
@@ -96,7 +97,7 @@ An entity file holds: `id`, `kind`, `name`, `aliases`, `tagline`, `summary`, `li
 
 ```mermaid
 flowchart LR
-  cli["cli (binary)<br/>validate, schema, new, migrate, sync, ingest, quarantine, status"] --> engine["engine<br/>content, storage, sync, collection, quality, freshness"]
+  cli["cli (binary)<br/>validate, schema, new, migrate, sync, ingest, quarantine, status, check-links, verify-ids"] --> engine["engine<br/>content, storage, sync, collection, quality, freshness, live checks"]
   cli --> model
   engine --> model["model<br/>Entity, Traits, Vocab, PartialDate"]
   engine --> postgres[(Postgres)]
@@ -106,8 +107,8 @@ flowchart LR
 | Crate | Holds |
 |---|---|
 | `model` | `Entity<T>` with `LanguageTraits`, `FrameworkTraits` and `RuntimeTraits`; links, external ids (`ExternalIds::iter`, and `SurveyName` with `for_year` since V0.1.14), domain fit, points, relations, milestones, learning, notable users, overrides; the vocabularies and `Planned`; `PartialDate` (a year, a month or a day) and `current_year()` |
-| `engine` | `db`, `sync`, `http`, `http_cache`, `limits`, `ingest`, `untrusted`, `quality` and `freshness` provide storage and collection; `content::load`: walks `content/` refusing links and oversized files, scans each YAML file against the parser budget, parses it with unknown fields refused, runs the checks in `content/check.rs` and returns either the content or every problem found as `Diagnostic { file, message }` |
-| `cli` | `cli validate [--content <dir>]`, run as `cargo validate`; `cli schema [--content <dir>] [--out <dir>] [--check]`, run as `cargo schema`; `cli new <kind> <id> [--content <dir>]`, run as `cargo new-entity` (since V0.1.16; the three aliases are in `.cargo/config.toml`); `cli --version` |
+| `engine` | `db`, `sync`, `http`, `http_cache`, `limits`, `ingest`, `untrusted`, `quality`, `freshness` and `settings` provide storage and collection; `links` and `verify_ids` check live content references; `content::load`: walks `content/` refusing links and oversized files, scans each YAML file against the parser budget, parses it with unknown fields refused, runs the checks in `content/check.rs` and returns either the content or every problem found as `Diagnostic { file, message }` |
+| `cli` | `cli validate [--content <dir>]`, run as `cargo validate`; `cli schema [--content <dir>] [--out <dir>] [--check]`, run as `cargo schema`; `cli new <kind> <id> [--content <dir>]`, run as `cargo new-entity` (since V0.1.16; the three aliases are in `.cargo/config.toml`); `cli --version`; storage/collection commands shown above; `cli check-links` and `cli verify-ids` (both accept `--content`) |
 
 **New entities** (since V0.1.16): `engine::scaffold::new_entity` refuses an invalid id (`content::id_problem`), an existing file and an id planned as another kind, writes the template from `scaffold::template` and takes the id off `planned.yaml` line by line, keeping its comments.
 
@@ -136,10 +137,10 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 
 - **One release, one commit**, titled `Update V0.1.N` with one bullet per change. The rules are in the [release index](RELEASES_0.1.md#how-each-release-is-made) and, since V0.1.2, in [CLAUDE.md](../CLAUDE.md).
 - **Each release** adds a [changelog](../CHANGELOG.md) entry, sets its row in the release index to ✅, updates this mindmap and bumps the version.
-- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.32 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
+- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.33 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
 - **Decisions D1–D9** in the release index are agreed: licenses, the web framework and tooling, the hosting shape, the secrets the owner provides, what the implementer may run, the tag name, the survey years and the project name.
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
-- **Contributing** (since V0.1.19): [CONTRIBUTING.md](../CONTRIBUTING.md) covers adding and editing entities, the sourcing rules (a source for anything disputable, preferred sources, no collected numbers, neutral tone, own words, no unreviewed AI text), the fit-rating rubric, the writing style and the review checklist. `.github/pull_request_template.md` carries the checklist; `.github/ISSUE_TEMPLATE/` has the *Request an entity* and *Report a data problem* forms (the latter's `entity` and `page` fields can be prefilled from the URL) and a link to private security reporting.
+- **Contributing** (since V0.1.17): [CONTRIBUTING.md](../CONTRIBUTING.md) covers adding and editing entities, the sourcing rules (a source for anything disputable, preferred sources, no collected numbers, neutral tone, own words, no unreviewed AI text), the fit-rating rubric, the writing style and the review checklist. `.github/pull_request_template.md` carries the checklist; `.github/ISSUE_TEMPLATE/` has the *Request an entity* and *Report a data problem* forms (the latter's `entity` and `page` fields can be prefilled from the URL) and a link to private security reporting.
 - **Line endings** (since V0.1.2): `.gitattributes` stores every text file with LF and marks binary types; `.editorconfig` sets UTF-8, LF, a final newline and the indent size for editors.
 
 ## 6. Security
@@ -153,7 +154,7 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 71 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
+| Tests | `cargo test` | 75 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
@@ -170,7 +171,6 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 
 ## 8. Not built yet
 
-- **Development environment is built** (V0.1.18): digest-pinned Postgres 17 in `compose.yaml`, `.env.example` and `docs/DEVELOPMENT.md`.
 - **provider adapters** (track F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).
 
@@ -263,3 +263,9 @@ Checks: cargo fmt, clippy, test (69 tests), validate, schema --check, sqlx prepa
 **Link checks.** cli check-links reports file and field for HTTP failures, deadlines and cross-host redirects, using HEAD with GET fallback, eight checks at a time and shared host limits; a weekly workflow maintains one bot-owned health issue
 
 Checks: cargo fmt, clippy, test (71 tests), validate and schema --check pass; wiremock covers fallback, 404, redirects and deadlines; all 16 live URLs pass after correcting two canonical Rust hosts; the weekly workflow was not run remotely because nothing is pushed
+
+### V0.1.33 — External identifiers can be verified before publishing content.
+
+**ID checks.** cli verify-ids verifies repositories, all package registries, Wikidata software classes, Stack Overflow tags and endoflife.date products; archived or renamed repositories and missing ids report file and provider, and missing credentials are explicit skips in the shared weekly health report
+
+Checks: cargo fmt, clippy, test (75 tests), validate and schema --check pass; five live Rust/React ids pass, four credential-dependent checks skip per D5, and a deliberately missing npm package reports ids.npm with exit 1; remote weekly execution was not run because nothing is pushed

@@ -2,6 +2,22 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.33 (2026-10-17)
+
+External identifiers can be verified before publishing content.
+
+### Added
+- **ID checks.** cli verify-ids verifies repositories, all package registries, Wikidata software classes, Stack Overflow tags and endoflife.date products; archived or renamed repositories and missing ids report file and provider, and missing credentials are explicit skips in the shared weekly health report
+
+### Fixed
+- Relabeled completed-check paragraphs in recent release notes as checks and limitations, and refreshed the mindmap command/module inventory.
+
+### Checks and limitations
+- cargo fmt, clippy, test (75 tests), validate and schema --check pass; five live Rust/React ids pass, four credential-dependent checks skip per D5, and a deliberately missing npm package reports ids.npm with exit 1; remote weekly execution was not run because nothing is pushed
+
+### Upgrading
+- Run cli verify-ids with optional GITHUB_TOKEN and STACKEXCHANGE_KEY; configure COLLECTION_GITHUB_TOKEN and STACKEXCHANGE_KEY repository secrets for the weekly workflow.
+
 ## V0.1.32 (2026-10-17)
 
 Live content links are checked with bounded requests.
@@ -9,7 +25,7 @@ Live content links are checked with bounded requests.
 ### Added
 - **Link checks.** cli check-links reports file and field for HTTP failures, deadlines and cross-host redirects, using HEAD with GET fallback, eight checks at a time and shared host limits; a weekly workflow maintains one bot-owned health issue
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (71 tests), validate and schema --check pass; wiremock covers fallback, 404, redirects and deadlines; all 16 live URLs pass after correcting two canonical Rust hosts; the weekly workflow was not run remotely because nothing is pushed
 
 ### Upgrading
@@ -22,7 +38,7 @@ Credentials are redacted and missing secrets skip collection.
 ### Added
 - **Secrets.** secrecy 0.10 stores GitHub and Stack Exchange credentials loaded from environment or bounded secret files; settings and authorization headers redact values, and missing credentials produce recorded skipped runs with warnings
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (69 tests), validate, schema --check, sqlx prepare --check and cargo deny pass; tests cover redaction, file loading, precedence and skipped status without credentials
 
 ### Upgrading
@@ -35,7 +51,7 @@ Collection status separates attempts from successful freshness.
 ### Added
 - **Freshness.** Migration 0003 tracks last attempt, success and failure per entity/source; the runner updates them and cli status lists each source run, failures and entities stale beyond twice their schedule
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (66 tests), validate, schema --check and sqlx prepare --check pass; Postgres tests verify missing, recent and stale successes and that failures do not refresh data
 
 ### Upgrading
@@ -48,7 +64,7 @@ Implausible measurements wait for review.
 ### Added
 - **Data quality.** Negative counts, invalid percentages and cumulative drops over 20 percent or jumps over tenfold go to quarantine with reasons; cli quarantine lists, releases or discards candidates, and dry runs show held values
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (65 tests), validate, schema --check and sqlx prepare --check pass; each numeric rule is tested, and Postgres proves held values stay out of observations until approved
 
 ### Upgrading
@@ -61,7 +77,7 @@ Untrusted responses are bounded, typed and sanitized.
 ### Added
 - **Source safety.** Typed JSON parsing keeps the body and recursion limits; the runner cleans text and bounds strings, structures, dates and numeric values before storage or previews, with fixed per-entity errors
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (59 tests), validate and schema --check pass; hostile strings, bidi controls, missing fields, NaN, infinities, negative counts and deep JSON are tested; the runner stores sanitized facts
 
 ### Upgrading
@@ -77,7 +93,7 @@ A source contract and transactional collection runner.
 ### Fixed
 - **Survey year maps.** JSON round-trips now accept string year keys as well as YAML numeric keys, so React can be read back from JSONB without losing its year-specific survey names.
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (56 tests), validate, schema --check and sqlx prepare --check pass; a fake source verifies partial runs and a dry run with no writes; concrete providers remain scheduled for track F
 
 ### Upgrading
@@ -93,7 +109,7 @@ Shared host quotas and bounded concurrency.
 ### Fixed
 - **HEAD responses.** A large advertised resource size no longer trips the body cap when no response body is transferred.
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (55 tests), validate and schema --check pass; fake-clock tests verify spacing, shared buckets, concurrency and Stack Exchange backoff; no provider load test was run
 
 ### Upgrading
@@ -106,7 +122,7 @@ Conditional HTTP requests preserve unchanged data.
 ### Added
 - **HTTP cache.** ETag and Last-Modified validators use hashed request keys, conditional headers and explicit acceptance transactions; a 304 increments the run unchanged count without rewriting observations
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (53 tests), validate, schema --check and sqlx prepare --check pass; a wiremock/Postgres test verifies conditional headers, delayed cache acceptance, unchanged row identity and run count
 
 ### Upgrading
@@ -119,7 +135,7 @@ A bounded retrying HTTP client for sources.
 ### Added
 - **HTTP.** reqwest 0.12 with rustls, gzip and brotli, connect and body deadlines, a 20 MiB decoded cap, identifying User-Agent and three attempts with jitter and Retry-After; httpdate 1 and wiremock 0.6 added
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (52 tests), validate, schema --check and cargo deny pass; wiremock covers 503 recovery, attempt limits, Retry-After, oversized bodies and timeouts; no live source adapter is built yet
 
 ### Upgrading
@@ -132,7 +148,7 @@ Separate reader, writer and migration privileges.
 ### Added
 - **Database roles.** Idempotent owner-run roles.sql creates cp_reader and cp_writer, grants only required table and sequence permissions, denies DDL and migration-history edits, and introduces API_DATABASE_URL without a writer fallback
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (49 tests), validate and schema --check pass; Postgres role tests deny reader writes and writer DDL; GitHub CI awaits a push
 
 ### Upgrading
@@ -145,7 +161,7 @@ SQL checked at compile time, with offline builds.
 ### Added
 - **Checked queries.** Application SQL uses sqlx macros, .sqlx metadata is committed, SQLX_OFFLINE defaults to true and CI checks metadata against migrated Postgres
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (48 tests), validate, schema --check, sqlx prepare --check and offline cargo build pass; a deliberately misspelled column fails compilation; GitHub CI awaits a push
 
 ### Upgrading
@@ -158,7 +174,7 @@ Validated content sync in one transaction.
 ### Added
 - **Sync.** cli sync writes a stable validated snapshot, derives reverse relations, imports samples and vocabularies, hashes all content with sha2 0.10, skips unchanged runs and retires removed entities without deleting collected history
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (48 tests), validate, schema --check and cargo deny pass; sync repeatability, invalid-input rollback and retirement are tested in Postgres; GitHub CI awaits a push
 
 ### Upgrading
@@ -171,7 +187,7 @@ Storage for collected data and provenance.
 ### Added
 - **Collected data.** Migration 0002 adds sources, observations, quarantine, releases, facts, ingestion runs and HTTP validators; observations upsert by entity, metric, period, date and source; the data model documents all fourteen tables
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (47 tests), validate and schema --check pass, including a real Postgres observation upsert test; GitHub CI awaits a push
 
 ### Upgrading
@@ -184,7 +200,7 @@ Postgres storage and explicit migrations.
 ### Added
 - **Database.** sqlx 0.8 and Tokio 1, a five-connection pool with acquire and statement timeouts, cli migrate, seven curated-data tables and isolated database tests with Postgres in CI. The reviewed CDLA-Permissive-2.0 license for webpki-roots trust data is allowed; retain its agreement when redistributing
 
-### Not done
+### Checks and limitations
 - cargo fmt, clippy, test (46 tests), validate, schema --check and cargo deny pass; migrations run twice locally; GitHub CI awaits a push
 
 ### Upgrading
@@ -197,7 +213,7 @@ A reproducible local Postgres environment.
 ### Added
 - **Development environment.** Digest-pinned Postgres 17, a localhost port, persistent volume, health check, ignored local settings and a development guide with the settings table
 
-### Not done
+### Checks and limitations
 - Docker Compose startup and psql connection, cargo fmt, clippy, test (45 tests), validate and schema --check pass; GitHub CI was not run because nothing is pushed
 
 ### Upgrading

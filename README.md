@@ -11,6 +11,7 @@ Early. Content tooling, Postgres storage, sync and the collection framework exis
 | Data types | `crates/model` | done |
 | Content loading and validation | `crates/engine` | done |
 | `validate` command | `crates/cli` | done |
+| Live content checks | `crates/cli` | `check-links` and `verify-ids`, with a shared weekly health report |
 | Content | `content/` | Rust and React written; the rest of the v1 scope is in `content/planned.yaml` |
 | Storage and sync | `crates/engine`, `compose.yaml` | migrations, offline checked SQL, reader/writer roles and transactional sync |
 | Collection framework | `crates/engine` | bounded HTTP, conditional caching, host quotas and a per-entity runner; provider adapters arrive in track F |

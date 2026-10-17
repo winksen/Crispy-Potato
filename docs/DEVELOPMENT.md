@@ -57,6 +57,12 @@ Remove-Item Env:SQLX_OFFLINE
 
 Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no database. CI checks metadata against a fresh migrated Postgres service; a bad column fails macro expansion.
 
+## Quarantine (V0.1.29)
+
+`cli quarantine list` prints the oldest 100 held observations with ids and reasons. `cli quarantine release <id>` atomically moves an approved trend outlier into observations; `cli quarantine discard <id>` removes it. Invalid numeric ranges cannot be approved. Both commands use the writer URL.
+
+Counts below zero and percentages outside 0–100 are now held rather than rejecting the whole entity. Non-finite numbers still fail before storage. Cumulative metrics (`*.stars`, `*.downloads_total`, `*.total_downloads`, `crates.downloads`) are held if they fall more than 20% or grow more than tenfold against the latest accepted value for the same entity/source/metric/period at or before that date. A zero baseline has no defined growth ratio. Entity row locks serialize baseline checks. Reports and dry runs include held candidates and reasons; normal observation reads never include quarantine.
+
 ## Collection runner (V0.1.27)
 
 `cargo run -p cli -- ingest <source> [--entity <id>] [--dry-run]` invokes registered adapters. Concrete providers arrive in track F (V0.1.56 onward); until then unknown source names fail explicitly. The `Source` contract supplies provenance, schedule, applicability and a typed batch of observations, releases and facts, plus accepted HTTP validators. The runner reads active synced entities, records real runs, commits each entity atomically and continues after fetch or storage failures. Mixed success gives `partial`; all failures give `failed`. Counts are entities accepted or unchanged, not individual rows.

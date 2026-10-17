@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT value FROM observations WHERE entity_id=$1 AND source_id=$2 AND metric=$3 AND period=$4 AND observed_at <= $5::text::date ORDER BY observed_at DESC LIMIT 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "value",
+        "type_info": "Float8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "38e1bfda97c4f1fefce241c8ba070001a4c6298fd4be2a4cd8282e6460c95443"
+}

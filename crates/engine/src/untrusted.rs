@@ -60,7 +60,7 @@ pub fn clean(batch: &mut Batch) -> Result<(), &'static str> {
         return Err("too many records");
     }
     for o in &batch.observations {
-        if !o.value.is_finite() || o.value < 0.0 || (o.unit == "pct" && o.value > 100.0) {
+        if !o.value.is_finite() {
             return Err("invalid observation number");
         }
         if !key(&o.metric)
@@ -108,7 +108,7 @@ mod tests {
         assert!(decode::<Value>(nested.as_bytes()).is_err());
     }
     #[test]
-    fn rejects_nonfinite_negative_and_out_of_range_numbers() {
+    fn rejects_nonfinite_numbers_before_quarantine() {
         let mut batch = Batch::default();
         batch.observations.push(crate::observations::Observation {
             entity_id: "rust".into(),
@@ -119,7 +119,7 @@ mod tests {
             period: "instant".into(),
             observed_at: "2026-10-17".into(),
         });
-        for bad in [f64::NAN, f64::INFINITY, -1.0, 101.0] {
+        for bad in [f64::NAN, f64::INFINITY] {
             batch.observations[0].value = bad;
             assert!(clean(&mut batch).is_err());
         }

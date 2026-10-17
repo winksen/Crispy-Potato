@@ -1,9 +1,5 @@
 //! Source contract and per-entity transactional collection runner.
-use crate::{
-    http::Client,
-    http_cache,
-    observations::{self, Observation},
-};
+use crate::{http::Client, http_cache, observations::Observation};
 use model::Entity;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -83,6 +79,7 @@ pub struct Report {
     pub unchanged: i32,
     pub errors: Vec<Failure>,
     pub preview: Vec<(String, Batch)>,
+    pub held: Vec<crate::quality::Held>,
 }
 
 pub async fn run(
@@ -122,6 +119,7 @@ pub async fn run(
         unchanged: 0,
         errors: Vec::new(),
         preview: Vec::new(),
+        held: Vec::new(),
     };
     for entity in entities.iter().filter(|e| source.applies(e)) {
         let mut batch = match source.fetch(&context, entity).await {
@@ -156,12 +154,23 @@ pub async fn run(
             });
             continue;
         }
-        if !dry_run && store(pool, entity, info.id, &batch).await.is_err() {
-            report.errors.push(Failure {
-                entity: entity.id.clone(),
-                reason: "storage failed; entity rolled back",
-            });
-            continue;
+        if dry_run {
+            for o in &batch.observations {
+                if let Some(held) = crate::quality::inspect(pool, o).await? {
+                    report.held.push(held);
+                }
+            }
+        } else {
+            match store(pool, entity, info.id, &batch).await {
+                Ok(held) => report.held.extend(held),
+                Err(_) => {
+                    report.errors.push(Failure {
+                        entity: entity.id.clone(),
+                        reason: "storage failed; entity rolled back",
+                    });
+                    continue;
+                }
+            }
         }
         if batch.unchanged {
             report.unchanged += 1;
@@ -186,10 +195,18 @@ pub async fn run(
     Ok(report)
 }
 
-async fn store(pool: &PgPool, entity: &Entity, source: &str, batch: &Batch) -> Result<(), Error> {
+async fn store(
+    pool: &PgPool,
+    entity: &Entity,
+    source: &str,
+    batch: &Batch,
+) -> Result<Vec<crate::quality::Held>, Error> {
     let mut tx = pool.begin().await?;
+    let mut held = Vec::new();
     for observation in &batch.observations {
-        observations::upsert(&mut tx, observation).await?;
+        if let Some(value) = crate::quality::store(&mut tx, observation).await? {
+            held.push(value);
+        }
     }
     for release in &batch.releases {
         sqlx::query!("INSERT INTO releases (entity_id,version,released_at,eol_at,lts,source_id) VALUES ($1,$2,$3::text::date,$4::text::date,$5,$6) ON CONFLICT (entity_id,version,source_id) DO UPDATE SET released_at=EXCLUDED.released_at,eol_at=EXCLUDED.eol_at,lts=EXCLUDED.lts", entity.id, release.version, release.released_at, release.eol_at, release.lts, source).execute(&mut *tx).await?;
@@ -201,5 +218,5 @@ async fn store(pool: &PgPool, entity: &Entity, source: &str, batch: &Batch) -> R
         http_cache::persist(&mut tx, update).await?;
     }
     tx.commit().await?;
-    Ok(())
+    Ok(held)
 }

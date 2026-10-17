@@ -2,6 +2,19 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.29 (2026-10-17)
+
+Implausible measurements wait for review.
+
+### Added
+- **Data quality.** Negative counts, invalid percentages and cumulative drops over 20 percent or jumps over tenfold go to quarantine with reasons; cli quarantine lists, releases or discards candidates, and dry runs show held values
+
+### Not done
+- cargo fmt, clippy, test (65 tests), validate, schema --check and sqlx prepare --check pass; each numeric rule is tested, and Postgres proves held values stay out of observations until approved
+
+### Upgrading
+- No migration needed; inspect held values with cli quarantine list and approve only verified trend changes.
+
 ## V0.1.28 (2026-10-17)
 
 Untrusted responses are bounded, typed and sanitized.

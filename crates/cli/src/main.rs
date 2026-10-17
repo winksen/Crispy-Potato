@@ -16,6 +16,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Inspect, release or discard held observations.
+    Quarantine {
+        #[command(subcommand)]
+        action: QuarantineAction,
+    },
     /// Apply database migrations (use the database owner's credentials).
     Migrate,
     /// Collect a registered source; source adapters arrive in track F.
@@ -61,9 +66,42 @@ enum Command {
     },
 }
 
+#[derive(Subcommand)]
+enum QuarantineAction {
+    List,
+    Release { id: i64 },
+    Discard { id: i64 },
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::Quarantine { action } => {
+            let Ok(url) = std::env::var("DATABASE_URL") else {
+                eprintln!("DATABASE_URL is required");
+                return ExitCode::FAILURE;
+            };
+            let Ok(pool) = engine::db::connect(&url).await else {
+                eprintln!("Cannot connect to the database");
+                return ExitCode::FAILURE;
+            };
+            let result = match action {
+                QuarantineAction::List => engine::quality::list(&pool)
+                    .await
+                    .map(|value| println!("{value:#}")),
+                QuarantineAction::Release { id } => engine::quality::resolve(&pool, id, true).await,
+                QuarantineAction::Discard { id } => {
+                    engine::quality::resolve(&pool, id, false).await
+                }
+            };
+            match result {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(_) => {
+                    eprintln!("Quarantine action failed; invalid ranges cannot be released");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::Ingest {
             source,
             entity,

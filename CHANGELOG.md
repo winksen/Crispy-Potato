@@ -2,6 +2,21 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.6 (2026-10-17)
+
+Workspace-wide lints and formatting rules, so every crate follows the same ones.
+
+### Added
+- **Workspace lints** in `Cargo.toml`, which every crate opts into with `[lints] workspace = true`: `unsafe_code` is forbidden, clippy's `unwrap_used` and `expect_used` warn (and so fail CI, which denies warnings), and `dbg_macro` and `todo` are denied.
+- **`clippy.toml`** allows `unwrap` and `expect` in tests.
+- **`rustfmt.toml`** sets the 2024 style edition and LF line endings, matching `.gitattributes`.
+
+### Changed
+- **The engine's integration tests** allow `unwrap` at the top of the file: clippy's test exemption covers `#[test]` functions but not the helpers they share. There was no `unwrap`, `expect`, `unsafe`, `dbg!` or `todo!` outside tests to remove.
+
+### Upgrading
+- Nothing to do. New code that unwraps outside tests now fails `cargo clippy -- -D warnings`; return the error or handle the `None` instead.
+
 ## V0.1.5 (2026-10-17)
 
 Dependencies are checked for advisories, licenses and sources, and kept up to date.

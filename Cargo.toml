@@ -7,6 +7,16 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 publish = false
 
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+# unwrap and expect are allowed in tests (clippy.toml).
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+dbg_macro = "deny"
+todo = "deny"
+
 [workspace.dependencies]
 model = { path = "crates/model" }
 engine = { path = "crates/engine" }

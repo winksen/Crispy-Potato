@@ -1,0 +1,3 @@
+# Formatting (release index, V0.1.6). Everything not set here is rustfmt's default.
+style_edition = "2024"
+newline_style = "Unix"

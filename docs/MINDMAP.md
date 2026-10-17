@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.5` (2026-10-17). V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
+> **Scope:** the repository at `V0.1.6` (2026-10-17). V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
 
 ---
 
@@ -43,6 +43,7 @@ mindmap
     Quality
       15 Rust tests
       fmt, clippy and validate
+      No unsafe, no unwrap outside tests
       CI on every push and pull request
       cargo deny and Dependabot
     Not built yet
@@ -105,7 +106,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 ## 5. Repository and process
 
 - **One release, one commit**, titled `Update V0.1.N` with one bullet per change. The rules are in the [release index](RELEASES_0.1.md#how-each-release-is-made) and, since V0.1.2, in [CLAUDE.md](../CLAUDE.md).
-- **Each release** adds a [changelog](../CHANGELOG.md) entry, sets its row in the release index to ✅, updates this mindmap and bumps the crate versions (0.1.5 now).
+- **Each release** adds a [changelog](../CHANGELOG.md) entry, sets its row in the release index to ✅, updates this mindmap and bumps the crate versions (0.1.6 now).
 - **Decisions D1–D9** in the release index are agreed: licenses, the web framework and tooling, the hosting shape, the secrets the owner provides, what the implementer may run, the tag name, the survey years and the project name.
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
 - **Line endings** (since V0.1.2): `.gitattributes` stores every text file with LF and marks binary types; `.editorconfig` sets UTF-8, LF, a final newline and the indent size for editors.
@@ -115,13 +116,15 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 | Check | Command | State |
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
-| Lints | `cargo clippy --all-targets -- -D warnings` | passes |
+| Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
 | Tests | `cargo test` | 15 pass: 2 for dates in `model`, 13 for content in `engine/tests/content.rs` |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
 | CI | `.github/workflows/ci.yml` | since V0.1.4, on pushes to `main` and pull requests: format, lints, validate, tests; not yet run on GitHub |
 
 **CI** (since V0.1.4) runs one job on `ubuntu-latest`. Validation comes before the tests so a broken content file fails at that step. Content pull requests are untrusted: the workflow runs on `pull_request` only, never `pull_request_target`, with a read-only token that is not kept in the checkout, and third-party actions are pinned by commit SHA. A second job (since V0.1.5) runs `cargo deny check`.
+
+**Lints and formatting** (since V0.1.6): every crate inherits the workspace lints in `Cargo.toml`: `unsafe_code` forbidden, `unwrap_used` and `expect_used` warned outside tests (`clippy.toml` allows them in tests, and the engine's integration-test file allows them for its helpers), `dbg_macro` and `todo` denied. `rustfmt.toml` sets the 2024 style edition and LF line endings.
 
 **Supply chain** (since V0.1.5):
 - `deny.toml`: RustSec advisories fail the check (unmaintained crates only when the workspace depends on them directly); licenses must be on a permissive allow-list that fits D1, and the workspace's own crates are checked too; crates.io is the only source; no `*` versions; duplicate versions are warned.
@@ -130,6 +133,6 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 
 ## 7. Not built yet
 
-- **Workspace lints** (V0.1.6), **one version source** (V0.1.7), **the threat model** (V0.1.8).
+- **One version source** (V0.1.7), **the threat model** (V0.1.8).
 - **Database and sync** (track C), **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).

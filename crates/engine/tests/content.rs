@@ -1,3 +1,7 @@
+// This file is test code; clippy's allow-unwrap-in-tests covers only the
+// #[test] functions, not the helpers they share.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 

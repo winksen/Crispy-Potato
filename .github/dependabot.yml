@@ -1,0 +1,22 @@
+# Weekly update pull requests for Cargo dependencies and the pinned GitHub
+# Actions (release index, V0.1.5). A release is offered once it is a week old,
+# so a compromised version that is yanked quickly never reaches a pull request.
+version: 2
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: deps
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: ci

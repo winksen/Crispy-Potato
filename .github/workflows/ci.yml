@@ -1,4 +1,4 @@
-# Every push to main and every pull request (release index, V0.1.4).
+# Every push to main and every pull request (release index, V0.1.4 and V0.1.5).
 #
 # Pull requests that edit content come from contributors and are untrusted, so
 # this workflow only ever runs on `pull_request` (never `pull_request_target`),
@@ -33,7 +33,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # rustup comes with the runner image, so no action is needed for it.
+      # rustup comes with the runner image, so no action is needed for it; it
+      # also reads rust-toolchain.toml.
       - name: Install the Rust toolchain
         run: |
           rustup toolchain install stable --profile minimal --component rustfmt,clippy
@@ -56,3 +57,16 @@ jobs:
 
       - name: Tests
         run: cargo test --locked
+
+  # Advisories, licenses, banned crates and sources, as set in deny.toml.
+  deny:
+    name: Dependencies (cargo deny)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check

@@ -2,6 +2,24 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.5 (2026-10-17)
+
+Dependencies are checked for advisories, licenses and sources, and kept up to date.
+
+### Security
+- **`deny.toml`**, the cargo-deny policy: RustSec vulnerabilities, unsound code and notices fail the check, and so do unmaintained crates the workspace depends on directly; licenses must be on an allow-list of permissive licenses that fit decision D1 (MIT, MIT-0, Apache-2.0 with or without the LLVM exception, BSD-2-Clause, BSD-3-Clause, ISC, Zlib, 0BSD, CC0-1.0, Unicode-3.0), and the workspace's own crates are checked too; crates.io is the only allowed source, with no git dependencies; `*` version requirements are refused and duplicate versions warned.
+- **A `cargo deny check` job in CI**, using `EmbarkStudios/cargo-deny-action` pinned by commit SHA (v2.1.1).
+- **Dependabot** opens weekly pull requests for Cargo dependencies and for the pinned GitHub Actions, and only offers a release once it is a week old.
+
+### Added
+- **`rust-toolchain.toml`** pins the stable channel with rustfmt and clippy, so local builds and CI use the same toolchain.
+
+### Not done
+- **The CI job has not run on GitHub**, because nothing is pushed. Locally, `cargo deny check` passes (advisories, bans, licenses and sources ok), and setting a crate's license to GPL-3.0-only made it fail with "license is not explicitly allowed".
+
+### Upgrading
+- Install cargo-deny to run the check locally: `cargo install cargo-deny --locked`, then `cargo deny check`.
+
 ## V0.1.4 (2026-10-17)
 
 Every push to main and every pull request is checked on GitHub Actions.

@@ -1,0 +1,5 @@
+# The toolchain for local builds and CI (release index, V0.1.5).
+[toolchain]
+channel = "stable"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

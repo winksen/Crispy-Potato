@@ -2,6 +2,22 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.27 (2026-10-17)
+
+A source contract and transactional collection runner.
+
+### Added
+- **Collection.** Source metadata, applicability and fetch batches drive cli ingest with entity filters and dry-run JSON previews; real runs persist provenance and isolate each entity transaction, recording partial failures without stopping other entities
+
+### Fixed
+- **Survey year maps.** JSON round-trips now accept string year keys as well as YAML numeric keys, so React can be read back from JSONB without losing its year-specific survey names.
+
+### Not done
+- cargo fmt, clippy, test (56 tests), validate, schema --check and sqlx prepare --check pass; a fake source verifies partial runs and a dry run with no writes; concrete providers remain scheduled for track F
+
+### Upgrading
+- Run cli sync before ingestion; concrete source names become available as their adapter releases ship.
+
 ## V0.1.26 (2026-10-17)
 
 Shared host quotas and bounded concurrency.

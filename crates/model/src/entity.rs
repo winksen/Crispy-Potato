@@ -251,7 +251,31 @@ pub enum SurveyName {
     One(String),
     /// Each name with the first survey year that used it, such as
     /// `{2022: React.js, 2023: React}`. A name applies until the next year listed.
-    ByYear(BTreeMap<u16, String>),
+    ByYear(#[serde(deserialize_with = "survey_years")] BTreeMap<u16, String>),
+}
+
+fn survey_years<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<BTreeMap<u16, String>, D::Error> {
+    // JSON object keys are strings; YAML also permits numeric year keys.
+    #[derive(Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+    #[serde(untagged)]
+    enum Year {
+        Number(u16),
+        Text(String),
+    }
+    let raw = BTreeMap::<Year, String>::deserialize(deserializer)?;
+    let mut years = BTreeMap::new();
+    for (key, value) in raw {
+        let year = match key {
+            Year::Number(year) => year,
+            Year::Text(year) => year.parse().map_err(serde::de::Error::custom)?,
+        };
+        if years.insert(year, value).is_some() {
+            return Err(serde::de::Error::custom("duplicate survey year"));
+        }
+    }
+    Ok(years)
 }
 
 impl SurveyName {

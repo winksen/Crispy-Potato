@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE ingestion_runs SET finished_at=now(),status=$2,changed=$3,unchanged=$4,errors=$5 WHERE id=$1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Int8",
+        "Text",
+        "Int4",
+        "Int4",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "379eac11ce7a5dd754b6bf491307c9f0158f8da625de31da582adcf066263acd"
+}

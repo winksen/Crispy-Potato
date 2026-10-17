@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO facts (entity_id,field,value,source_id) VALUES ($1,$2,$3,$4) ON CONFLICT (entity_id,field,source_id) DO UPDATE SET value=EXCLUDED.value,collected_at=now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Jsonb",
+        "Text"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "3e3425aa397929cea8ab16bff5a0837aac79b4f6671b36e61c66ff72e8778b97"
+}

@@ -57,6 +57,12 @@ Remove-Item Env:SQLX_OFFLINE
 
 Commit `.sqlx/` with every query change. Ordinary `cargo build` needs no database. CI checks metadata against a fresh migrated Postgres service; a bad column fails macro expansion.
 
+## Collection runner (V0.1.27)
+
+`cargo run -p cli -- ingest <source> [--entity <id>] [--dry-run]` invokes registered adapters. Concrete providers arrive in track F (V0.1.56 onward); until then unknown source names fail explicitly. The `Source` contract supplies provenance, schedule, applicability and a typed batch of observations, releases and facts, plus accepted HTTP validators. The runner reads active synced entities, records real runs, commits each entity atomically and continues after fetch or storage failures. Mixed success gives `partial`; all failures give `failed`. Counts are entities accepted or unchanged, not individual rows.
+
+Dry runs print the batches they would store and write nothing, including no run or source rows. The Postgres fake-source test verifies a successful measurement, a failed second entity and a recorded partial run. Diagnostics store entity ids and fixed error categories, never response bodies or URLs. No settings added.
+
 ## HTTP transport (V0.1.24)
 
 Since V0.1.26 all clients share a capacity-one token bucket and concurrency semaphore per hostname, including retries and redirects. `engine::limits::QUOTAS` holds the source/host table: conservative one-per-second defaults for known APIs, one concurrent request for crates.io, two for other hosts; unlisted hosts use 100 ms spacing and two slots. These are application limits, not advertised provider allowances. Cross-origin redirects drop authorization and cookies.

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO sources (id,name,url,license,attribution,schedule_seconds) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name,url=EXCLUDED.url,license=EXCLUDED.license,attribution=EXCLUDED.attribution,schedule_seconds=EXCLUDED.schedule_seconds",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ea7907d823136f7a38f71f4eb35798e583e92d0f87dbed00a804f732269b6e05"
+}

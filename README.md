@@ -4,7 +4,7 @@ An open-source reference for programming languages and frameworks: what each one
 
 ## Status
 
-Early. The data model and content validation exist; the data collection engine, the API and the web app don't yet.
+Early. Content tooling, Postgres storage, sync and the collection framework exist. Provider adapters, the API and the web app are still planned.
 
 | Part | Where | State |
 |------|-------|-------|
@@ -12,7 +12,9 @@ Early. The data model and content validation exist; the data collection engine, 
 | Content loading and validation | `crates/engine` | done |
 | `validate` command | `crates/cli` | done |
 | Content | `content/` | Rust and React written; the rest of the v1 scope is in `content/planned.yaml` |
-| Data collection, API, web app | | not started |
+| Storage and sync | `crates/engine`, `compose.yaml` | migrations, offline checked SQL, reader/writer roles and transactional sync |
+| Collection framework | `crates/engine` | bounded HTTP, conditional caching, host quotas and a per-entity runner; provider adapters arrive in track F |
+| API and web app | | not started |
 
 ## Contributing content
 
@@ -38,6 +40,7 @@ Editors that use the YAML language server (VS Code with the Red Hat YAML extensi
 
 - [Mindmap](docs/MINDMAP.md): what is built
 - [Architecture](docs/architecture.md)
+- [Development](docs/DEVELOPMENT.md): local Postgres, settings, migrations, sync and collection commands
 - [Data model](docs/data-model.md)
 - [Release plan to V0.2.0](docs/RELEASES_0.1.md)
 - [Changelog](CHANGELOG.md)

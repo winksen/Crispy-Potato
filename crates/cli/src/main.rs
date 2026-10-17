@@ -18,6 +18,14 @@ struct Cli {
 enum Command {
     /// Apply database migrations (use the database owner's credentials).
     Migrate,
+    /// Collect a registered source; source adapters arrive in track F.
+    Ingest {
+        source: String,
+        #[arg(long)]
+        entity: Option<String>,
+        #[arg(long)]
+        dry_run: bool,
+    },
     /// Validate and synchronize curated content in one transaction.
     Sync {
         #[arg(long, default_value = "content")]
@@ -56,6 +64,45 @@ enum Command {
 #[tokio::main]
 async fn main() -> ExitCode {
     match Cli::parse().command {
+        Command::Ingest {
+            source,
+            entity,
+            dry_run,
+        } => {
+            let sources = engine::ingest::registered_sources();
+            let Some(adapter) = sources.iter().find(|s| s.info().id == source) else {
+                eprintln!("Unknown source; concrete source adapters arrive in track F");
+                return ExitCode::FAILURE;
+            };
+            let Ok(url) = std::env::var("DATABASE_URL") else {
+                eprintln!("DATABASE_URL is required");
+                return ExitCode::FAILURE;
+            };
+            let Ok(pool) = engine::db::connect(&url).await else {
+                eprintln!("Cannot connect to the database");
+                return ExitCode::FAILURE;
+            };
+            match engine::ingest::run(&pool, adapter.as_ref(), entity.as_deref(), dry_run).await {
+                Ok(report) => match serde_json::to_string_pretty(&report) {
+                    Ok(json) => {
+                        println!("{json}");
+                        if report.errors.is_empty() {
+                            ExitCode::SUCCESS
+                        } else {
+                            ExitCode::FAILURE
+                        }
+                    }
+                    Err(_) => {
+                        eprintln!("Cannot format ingestion report");
+                        ExitCode::FAILURE
+                    }
+                },
+                Err(_) => {
+                    eprintln!("Ingestion failed");
+                    ExitCode::FAILURE
+                }
+            }
+        }
         Command::Sync { content } => {
             if validate(&content) != ExitCode::SUCCESS {
                 return ExitCode::FAILURE;

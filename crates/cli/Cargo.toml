@@ -13,3 +13,4 @@ clap.workspace = true
 engine.workspace = true
 model.workspace = true
 tokio.workspace = true
+serde_json.workspace = true

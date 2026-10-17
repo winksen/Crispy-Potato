@@ -243,13 +243,9 @@ fn missing_samples_are_reported() {
 
 #[test]
 fn paths_are_relative_to_the_content_folder_with_forward_slashes() {
-    let with_sample = format!(
-        "{LANGUAGE}samples: [testlang/missing.txt]
-"
-    );
+    let with_sample = format!("{LANGUAGE}samples: [testlang/missing.txt]\n");
     let report = report(
-        "languages: [testlang]
-",
+        "languages: [testlang]\n",
         &[
             ("languages/copy.yaml", LANGUAGE),
             ("languages/testlang.yaml", &with_sample),
@@ -323,8 +319,7 @@ fn alias_bombs_are_refused_before_they_expand() {
 #[test]
 fn deeply_nested_files_are_refused() {
     let deep = format!(
-        "{LANGUAGE}notable_users: {}{}
-",
+        "{LANGUAGE}notable_users: {}{}\n",
         "[".repeat(40),
         "]".repeat(40)
     );
@@ -337,11 +332,7 @@ fn deeply_nested_files_are_refused() {
 
 #[test]
 fn files_over_256_kib_are_refused() {
-    let line = format!(
-        "# {}
-",
-        "x".repeat(1021)
-    );
+    let line = format!("# {}\n", "x".repeat(1021));
     let big = format!("{LANGUAGE}{}", line.repeat(257));
     let start = Instant::now();
     let report = report("", &[("languages/testlang.yaml", &big)]);
@@ -363,10 +354,7 @@ fn symbolic_links_under_content_are_refused() {
     fs::write(&secret, "not content").unwrap();
     fs::write(outside.path().join("evil.yaml"), LANGUAGE).unwrap();
 
-    let source = format!(
-        "{LANGUAGE}samples: [testlang/hello.txt]
-"
-    );
+    let source = format!("{LANGUAGE}samples: [testlang/hello.txt]\n");
     let dir = fixture("", &[("languages/testlang.yaml", &source)]);
     let link = dir.path().join("samples/testlang/hello.txt");
     fs::create_dir_all(link.parent().unwrap()).unwrap();
@@ -469,6 +457,10 @@ fn each_external_id_kind_is_checked_against_its_format() {
         (
             "endoflife: node.js",
             r#"ids.endoflife: "node.js" is not an endoflife.date product"#,
+        ),
+        (
+            "simple_icons: node.js",
+            r#"ids.simple_icons: "node.js" is not a Simple Icons slug"#,
         ),
     ];
     for (line, expected) in cases {
@@ -677,4 +669,18 @@ fn survey_names_are_one_name_or_a_name_per_year() {
         assert_eq!(problems.len(), 1, "{line}: {problems:#?}");
         assert_problem(&problems, expected);
     }
+}
+
+#[test]
+fn a_logo_slug_alone_is_not_an_id_to_collect_data_with() {
+    let only_logo = LANGUAGE.replace("github: example/testlang", "simple_icons: testlang");
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &only_logo)]),
+        ["ids: set at least one external id so data can be collected"]
+    );
+    let both = with_id("simple_icons: testlang");
+    assert_eq!(
+        problems("", &[("languages/testlang.yaml", &both)]),
+        Vec::<String>::new()
+    );
 }

@@ -72,7 +72,7 @@ When you add a file, remove its id from `planned.yaml`. Validation fails while a
 | `tagline` | yes | one sentence, at most 100 characters |
 | `summary` | yes | 2–4 sentences, neutral tone |
 | `links` | yes | `website` is required; `docs` and `repo` are optional |
-| `ids` | yes | how the engine finds this entity in each source; at least one |
+| `ids` | yes | how the engine finds this entity in each source; at least one besides `simple_icons` |
 | `traits` | yes | depends on the kind (see below) |
 | `domains` | yes | how well it fits each kind of project, with a note when the fit isn't obvious |
 | `strengths`, `weaknesses` | yes | 2–6 each; `title`, `detail`, optional `sources` |
@@ -108,6 +108,7 @@ Write 2 to 4, each at most 140 characters. They describe situations in which a r
 | `stackoverflow_tag` | question counts over time |
 | `so_survey` | the name used in the Stack Overflow Developer Survey: one name, or a name per survey year (see below) |
 | `endoflife` | the endoflife.date product slug: support cycles, LTS dates |
+| `simple_icons` | the [Simple Icons](https://simpleicons.org) slug of the logo the web app shows. The icons are CC0 and come from the simple-icons package at build time, so no SVG is stored in this repository and none needs sanitizing. It is not used to collect data, so it doesn't count as the one required id. Leave it out when Simple Icons has no icon; the web app then shows a monogram |
 
 Each id is checked against its source's format, so a typo fails validation rather than a lookup:
 
@@ -127,6 +128,7 @@ Each id is checked against its source's format, so a typo fails validation rathe
 | `stackoverflow_tag` | up to 35 lowercase letters, digits and `+ # . -` | `c#` |
 | `so_survey` | the survey's name, up to 60 characters, no leading or trailing spaces; or a map of survey years (2011 to this year) to such names | `Rust` |
 | `endoflife` | lowercase letters and digits joined by single hyphens | `spring-boot` |
+| `simple_icons` | lowercase letters and digits, with single `_` between words; at most 64 characters | `nodedotjs` |
 
 ### Survey names by year
 

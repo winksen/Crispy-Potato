@@ -2,6 +2,25 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.15 (2026-10-17)
+
+Entities name their logo by its Simple Icons slug, so the web app can show it without the repository storing any SVG.
+
+### Added
+- **`ids.simple_icons`**, the slug of the entity's logo in [Simple Icons](https://simpleicons.org), whose icons are CC0. The web app will import the icon from the simple-icons package (V0.1.102), so no SVG is stored here and there is none to sanitize. The slug is validated like the other ids: lowercase letters and digits with single underscores between words, the format all 3,466 slugs Simple Icons lists follow. It only names a logo, so an entity still needs another id to collect data with.
+- **Rust and React have one**: `rust` and `react`, both in Simple Icons' slug list.
+- **The data model and the JSON Schemas** describe the field.
+- **Tests**: real slugs and malformed ones in the id table, a malformed slug through the validator, and an entity whose only id is its logo.
+
+### Fixed
+- **Six test strings spanned a line break** (in the V0.1.9 and V0.1.10 tests) instead of using `\n`; they read the same now as the rest. Nothing they test changed.
+
+### Changed
+- **`ExternalIds::is_empty` is now `has_source`**, which leaves out `simple_icons`.
+
+### Upgrading
+- Nothing to do. Add `simple_icons` to an entity when Simple Icons has its logo; the slug is in the URL of the icon's page on simpleicons.org.
+
 ## V0.1.14 (2026-10-17)
 
 `ids.so_survey` takes one name or a name per survey year, because the Stack Overflow survey renames technologies between years.

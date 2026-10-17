@@ -175,11 +175,16 @@ pub struct ExternalIds {
     pub so_survey: Option<SurveyName>,
     /// The endoflife.date product slug.
     pub endoflife: Option<String>,
+    /// The Simple Icons slug the web app shows as the logo. The icons are CC0
+    /// and come from the simple-icons package; no SVG is stored here.
+    pub simple_icons: Option<String>,
 }
 
 impl ExternalIds {
-    pub fn is_empty(&self) -> bool {
-        self.iter().next().is_none() && self.so_survey.is_none()
+    /// Whether any id that data is collected with is set. `simple_icons` only
+    /// names a logo, so it doesn't count.
+    pub fn has_source(&self) -> bool {
+        self.so_survey.is_some() || self.iter().any(|(field, _)| field != "simple_icons")
     }
 
     /// Each id written as a single string that is set, with its field name as
@@ -201,6 +206,7 @@ impl ExternalIds {
             stackoverflow_tag,
             so_survey: _,
             endoflife,
+            simple_icons,
         } = self;
         [
             ("wikidata", wikidata),
@@ -216,6 +222,7 @@ impl ExternalIds {
             ("maven", maven),
             ("stackoverflow_tag", stackoverflow_tag),
             ("endoflife", endoflife),
+            ("simple_icons", simple_icons),
         ]
         .into_iter()
         .filter_map(|(field, id)| Some((field, id.as_deref()?)))

@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.14` (2026-10-17). V0.1.14 lets `so_survey` hold a name per survey year; V0.1.13 adds `choose_when`; V0.1.12 adds JSON Schemas for editors (`cargo schema`); V0.1.11 checks every external id against its source's format, bounds years, orders timelines and keeps `vs` out of ids; V0.1.10 puts hard limits on loading content (no links, 256 KiB per file, a YAML parser budget); V0.1.9 makes diagnostic paths relative with forward slashes and matches extensions without regard to case; V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
+> **Scope:** the repository at `V0.1.15` (2026-10-17). V0.1.15 adds `ids.simple_icons` for logos; V0.1.14 lets `so_survey` hold a name per survey year; V0.1.13 adds `choose_when`; V0.1.12 adds JSON Schemas for editors (`cargo schema`); V0.1.11 checks every external id against its source's format, bounds years, orders timelines and keeps `vs` out of ids; V0.1.10 puts hard limits on loading content (no links, 256 KiB per file, a YAML parser budget); V0.1.9 makes diagnostic paths relative with forward slashes and matches extensions without regard to case; V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
 
 ---
 
@@ -16,6 +16,7 @@ mindmap
       Strengths, weaknesses and fit per domain
       When to choose each one
       Every number with its source and date
+      Logos from Simple Icons, no SVG stored
       v1 scope of 50 entities
     Content
       YAML files in git
@@ -30,7 +31,7 @@ mindmap
       cli: validate, schema and --version
     Validation
       Schema and unknown fields
-      14 external id formats
+      15 external id formats
       Survey names by year
       Plausible years, ordered timelines
       File names and folders
@@ -53,7 +54,7 @@ mindmap
       Untrusted content limits
       Private vulnerability reports
     Quality
-      38 Rust tests
+      39 Rust tests
       fmt, clippy and validate
       No unsafe, no unwrap outside tests
       CI on every push and pull request
@@ -114,7 +115,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 - **Files:** the file name matches the `id`, the `kind` matches the folder, ids are unique slugs without `vs` as a word (since V0.1.11, for compare URLs); extensions are matched without regard to case, so `.yml` is refused and `Rust.YAML` is read and asked to use lowercase (since V0.1.9).
 - **Vocabularies:** every trait, domain and ecosystem value is listed in `content/vocab/`.
 - **Survey names** (since V0.1.14): `so_survey` is one name or a map of survey years (2011 to this year) to names, each applying until the next year listed.
-- **External ids:** at least one, and since V0.1.11 each checked against its source's format (`content/check/ids.rs`): Wikidata, GitHub (no `.`, `..` or `.git` names), npm, PyPI, crates.io, NuGet, Packagist, RubyGems, pub.dev, Hex, Maven, Stack Overflow tags, the survey name and endoflife.date.
+- **External ids:** at least one to collect data with (`ExternalIds::has_source`), and since V0.1.11 each checked against its source's format (`content/check/ids.rs`): Wikidata, GitHub (no `.`, `..` or `.git` names), npm, PyPI, crates.io, NuGet, Packagist, RubyGems, pub.dev, Hex, Maven, Stack Overflow tags, the survey name, endoflife.date and, since V0.1.15, the Simple Icons slug of the logo (which doesn't count as an id to collect data with).
 - **References:** relations and `traits.languages` point to an entity with a file or a planned one; alternatives share a kind, `runs_on` points to a runtime, nothing refers to itself; a file that fails to parse still counts as known.
 - **Style:** 2–6 strengths and weaknesses, 2–4 `choose_when` statements of at most 140 characters (since V0.1.13), taglines of at most 100 characters, a note for `possible` and `poor` fits, no value listed twice, unique aliases.
 - **Samples and overrides:** samples exist under `content/samples/`; every override has a reason.
@@ -125,7 +126,7 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 
 - **One release, one commit**, titled `Update V0.1.N` with one bullet per change. The rules are in the [release index](RELEASES_0.1.md#how-each-release-is-made) and, since V0.1.2, in [CLAUDE.md](../CLAUDE.md).
 - **Each release** adds a [changelog](../CHANGELOG.md) entry, sets its row in the release index to ✅, updates this mindmap and bumps the version.
-- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.7 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
+- **One version** (since V0.1.7): `workspace.package.version` in the root `Cargo.toml` (0.1.15 now) is inherited by every crate and printed by `cli --version`; `crates/cli/tests/version.rs` fails when the newest changelog entry names another version or a crate sets its own.
 - **Decisions D1–D9** in the release index are agreed: licenses, the web framework and tooling, the hosting shape, the secrets the owner provides, what the implementer may run, the tag name, the survey years and the project name.
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
 - **Line endings** (since V0.1.2): `.gitattributes` stores every text file with LF and marks binary types; `.editorconfig` sets UTF-8, LF, a final newline and the indent size for editors.
@@ -141,11 +142,11 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 |---|---|---|
 | Format | `cargo fmt --check` | passes |
 | Lints | `cargo clippy --all-targets -- -D warnings` | passes, with the workspace lints (since V0.1.6) |
-| Tests | `cargo test` | 38 pass: 4 in `model` (dates, survey names), 3 in `engine` (alias limits, id formats, schemas), 27 for content in `engine/tests/content.rs` (the symbolic-link test skips where links can't be created), 3 for the version and 1 for stale schemas in `cli/tests/` |
+| Tests | `cargo test` | 39 pass: 4 in `model` (dates, survey names), 3 in `engine` (alias limits, id formats, schemas), 28 for content in `engine/tests/content.rs` (the symbolic-link test skips where links can't be created), 3 for the version and 1 for stale schemas in `cli/tests/` |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
 | Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
-| CI | `.github/workflows/ci.yml` | since V0.1.4, on pushes to `main` and pull requests: format, lints, validate, tests; not yet run on GitHub |
+| CI | `.github/workflows/ci.yml` | since V0.1.4, on pushes to `main` and pull requests: format, lints, validate, schemas, tests, and cargo deny; not yet run on GitHub |
 
 **CI** (since V0.1.4) runs one job on `ubuntu-latest`: format, lints, validate, the schema check (since V0.1.12), then tests. Validation comes before the tests so a broken content file fails at that step. Content pull requests are untrusted: the workflow runs on `pull_request` only, never `pull_request_target`, with a read-only token that is not kept in the checkout, and third-party actions are pinned by commit SHA. A second job (since V0.1.5) runs `cargo deny check`.
 
@@ -158,6 +159,6 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`, `schema
 
 ## 8. Not built yet
 
-- **Content tooling**: logos (V0.1.15), `cli new` (V0.1.16) and the contributing guide (V0.1.17).
+- **Content tooling**: `cli new` (V0.1.16) and the contributing guide (V0.1.17).
 - **Database and sync** (track C), **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).

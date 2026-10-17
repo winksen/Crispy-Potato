@@ -20,6 +20,7 @@ ids:
   stackoverflow_tag: rust
   so_survey: Rust
   endoflife: rust
+  simple_icons: rust
 
 traits:
   typing: [static, strong, inferred]

@@ -26,6 +26,7 @@ ids:
     2022: React.js
     2023: React
   endoflife: react
+  simple_icons: react
 
 traits:
   ecosystem: web-frontend

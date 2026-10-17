@@ -71,6 +71,11 @@ pub(super) fn problem(field: &str, id: &str) -> Option<&'static str> {
             "an endoflife.date product like nodejs: lowercase letters and digits joined by \
              single hyphens",
         ),
+        "simple_icons" => (
+            simple_icons(id),
+            "a Simple Icons slug like rust or nodedotjs: lowercase letters and digits, with \
+             single _ between words",
+        ),
         _ => return None,
     };
     (!valid).then_some(expected)
@@ -190,6 +195,10 @@ fn stackoverflow_tag(s: &str) -> bool {
         && s.bytes().any(lower_or_digit)
         && s.bytes()
             .all(|b| lower_or_digit(b) || matches!(b, b'+' | b'#' | b'.' | b'-'))
+}
+
+fn simple_icons(s: &str) -> bool {
+    s.len() <= 64 && words(s, &['_'], lower_or_digit)
 }
 
 fn survey_name(s: &str) -> bool {
@@ -347,6 +356,26 @@ mod tests {
                 "so_survey",
                 &["Rust", "React", "C#", "ASP.NET Core", "Node.js"],
                 &["", " Rust", "Rust ", "Ru\nst", &"a".repeat(61)],
+            ),
+            (
+                "simple_icons",
+                &[
+                    "rust",
+                    "react",
+                    "nodedotjs",
+                    "dotnet",
+                    "hive_blockchain",
+                    "c",
+                ],
+                &[
+                    "",
+                    "Rust",
+                    "node.js",
+                    "node-js",
+                    "_rust",
+                    "rust_",
+                    "hive__blockchain",
+                ],
             ),
             (
                 "endoflife",

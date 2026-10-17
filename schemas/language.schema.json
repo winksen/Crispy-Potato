@@ -129,6 +129,13 @@
             "null"
           ]
         },
+        "simple_icons": {
+          "description": "The Simple Icons slug the web app shows as the logo. The icons are CC0\nand come from the simple-icons package; no SVG is stored here.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "so_survey": {
           "anyOf": [
             {

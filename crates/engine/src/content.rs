@@ -431,16 +431,10 @@ mod tests {
     /// 9^6 values: the alias limits stop it while it is deserialized.
     #[test]
     fn alias_expansion_is_limited_while_deserializing() {
-        let mut yaml = String::from(
-            "l0: &l0 [a, a, a, a, a, a, a, a, a]
-",
-        );
+        let mut yaml = String::from("l0: &l0 [a, a, a, a, a, a, a, a, a]\n");
         for level in 1..6 {
             let aliases = vec![format!("*l{}", level - 1); 9].join(", ");
-            yaml.push_str(&format!(
-                "l{level}: &l{level} [{aliases}]
-"
-            ));
+            yaml.push_str(&format!("l{level}: &l{level} [{aliases}]\n"));
         }
         let report =
             serde_saphyr::budget::check_yaml_budget(&yaml, budget(), EnforcingPolicy::AllContent);

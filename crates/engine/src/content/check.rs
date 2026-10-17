@@ -251,7 +251,7 @@ fn check_entity(e: &Entity, ctx: &Context, r: &mut Report) {
 
 fn check_ids(e: &Entity, ctx: &Context, r: &mut Report) {
     let ids = &e.ids;
-    if ids.is_empty() {
+    if !ids.has_source() {
         r.error(
             "ids",
             "set at least one external id so data can be collected",

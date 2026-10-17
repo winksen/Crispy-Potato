@@ -158,8 +158,6 @@ Search starts with Postgres full-text search. A few hundred entities don't need 
 - **Libraries** as an entity kind.
 - **Public dataset downloads** (JSON/SQLite) for anyone to reuse.
 
-## Open decisions
+## Decisions
 
-- SSR framework for the web app: React Router v7 (framework mode) or Next.js.
-- Hosting for the api, worker and Postgres.
-- Project name.
+The open questions are settled in the [release index](RELEASES_0.1.md#decisions) (D1–D9): React Router v7 in framework mode for the web app, containers behind a reverse proxy with the provider picked after 0.2.0, and the name Crispy-Potato for 0.2.0. Code is licensed MIT OR Apache-2.0 and content CC BY-SA 4.0.

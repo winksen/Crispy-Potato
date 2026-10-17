@@ -31,3 +31,11 @@ It reports every problem with its file and field. See [docs/data-model.md](docs/
 - [Data model](docs/data-model.md)
 - [Release plan to V0.2.0](docs/RELEASES_0.1.md)
 - [Changelog](CHANGELOG.md)
+
+## License
+
+- **Code and documentation** (everything outside `content/`) are dual-licensed under the [MIT License](LICENSE-MIT) or the [Apache License 2.0](LICENSE-APACHE), at your option.
+- **Content** (everything in `content/`: entity files, vocabularies and code samples) is licensed under [Creative Commons Attribution-ShareAlike 4.0 International](content/LICENSE) (CC BY-SA 4.0).
+- **Data collected from external sources** keeps its source's license and attribution; see [the data model](docs/data-model.md#sources-and-provenance).
+
+Unless you explicitly state otherwise, a contribution you submit for inclusion is licensed the same way, without any additional terms or conditions: code under MIT OR Apache-2.0, content under CC BY-SA 4.0.

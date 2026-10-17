@@ -2,6 +2,21 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.3 (2026-10-17)
+
+The code and the content get their licenses (decision D1).
+
+### Added
+- **Code is dual-licensed MIT OR Apache-2.0**, the Rust convention: `LICENSE-MIT` and `LICENSE-APACHE` at the root, and `license = "MIT OR Apache-2.0"` in the workspace manifest, which every crate inherits.
+- **Content is licensed CC BY-SA 4.0**: `content/LICENSE` holds the legal code, and it covers the entity files, the vocabularies and the code samples.
+- **A License section in the README** saying which license applies where, that collected data keeps its source's license, and that contributions come in under the same terms.
+
+### Fixed
+- **The architecture document** still listed the web framework, hosting and project name as open; it now points to the decisions agreed in V0.1.2.
+
+### Upgrading
+- Nothing to do.
+
 ## V0.1.2 (2026-10-17)
 
 The repository gets its conventions: a changelog, the release rules for whoever implements the next release, a mindmap, and one line ending everywhere.

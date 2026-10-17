@@ -2,6 +2,17 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.8 (2026-10-17)
+
+A threat model says what the project protects and which release deals with each threat, and `SECURITY.md` says how to report a vulnerability.
+
+### Security
+- **[The threat model](docs/security/threat-model.md)**: five assets (data integrity, availability, secrets, visitors' browsers, the code that ships), five trust boundaries (contributor pull requests, external sources, the public API and website, the operator, third-party code), and 24 threats, each with its mitigation, the release in the index that delivers it and whether that release has shipped. A last table maps every 🔒 row of the index to its threats.
+- **`SECURITY.md`**: report a vulnerability privately through GitHub's private vulnerability reporting, what a useful report contains, that only the next release gets fixes, and what is in and out of scope. The README links it and the threat model.
+
+### Upgrading
+- **The owner turns on private vulnerability reporting** in the repository's settings (*Security* → *Private vulnerability reporting*); until then the route `SECURITY.md` describes is not available.
+
 ## V0.1.7 (2026-10-17)
 
 The version is written in one place, and a test keeps it equal to the newest changelog entry.

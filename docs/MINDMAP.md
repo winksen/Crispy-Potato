@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.7` (2026-10-17). V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
+> **Scope:** the repository at `V0.1.8` (2026-10-17). V0.1.8 adds the threat model and `SECURITY.md`; V0.1.7 writes the version once and tests it against the changelog; V0.1.6 adds the workspace lints and `rustfmt.toml`; V0.1.5 adds the supply-chain checks (cargo deny, Dependabot, a pinned toolchain); V0.1.4 adds CI on GitHub Actions; V0.1.3 adds the licenses (code MIT OR Apache-2.0, content CC BY-SA 4.0); V0.1.2 adds the changelog, `CLAUDE.md`, this mindmap, `.gitattributes` and `.editorconfig`; V0.1.1 built the model, the validator and the first two entities.
 
 ---
 
@@ -41,6 +41,9 @@ mindmap
       Changelog and release index
       CLAUDE.md release rules
       LF line endings everywhere
+    Security
+      Threat model with 24 threats
+      Private vulnerability reports
     Quality
       18 Rust tests
       fmt, clippy and validate
@@ -113,7 +116,12 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 - **Licenses** (since V0.1.3): code and documentation are MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`, and `license` in the workspace manifest, inherited by every crate); everything in `content/` is CC BY-SA 4.0 (`content/LICENSE`); collected data keeps its source's license. The README's License section says the same.
 - **Line endings** (since V0.1.2): `.gitattributes` stores every text file with LF and marks binary types; `.editorconfig` sets UTF-8, LF, a final newline and the indent size for editors.
 
-## 6. Quality
+## 6. Security
+
+- **[The threat model](security/threat-model.md)** (since V0.1.8) names five assets (data integrity, availability, secrets, visitors' browsers, the code that ships) and five trust boundaries (contributor pull requests, external sources, the public API and website, the operator, third-party code). Each of its 24 threats has a mitigation, the release that delivers it and a status; every 🔒 row of the release index maps to at least one threat. Shipped so far: http-only URLs and sample paths kept inside `samples/` (V0.1.1), CI that untrusted pull requests cannot use to reach secrets (V0.1.4), and the cargo deny and pinned-action checks (V0.1.5).
+- **[SECURITY.md](../SECURITY.md)** (since V0.1.8): vulnerabilities are reported privately through GitHub's private vulnerability reporting, which the owner turns on in the repository settings.
+
+## 7. Quality
 
 | Check | Command | State |
 |---|---|---|
@@ -133,8 +141,8 @@ Dependencies: `serde`, `serde-saphyr` (YAML), `url`, `indexmap`, `clap`; `tempfi
 - `rust-toolchain.toml` pins the stable channel with rustfmt and clippy.
 - Dependabot (`.github/dependabot.yml`) opens weekly pull requests for Cargo and GitHub Actions, for releases at least a week old.
 
-## 7. Not built yet
+## 8. Not built yet
 
-- **The threat model** (V0.1.8), **validator fixes and limits on untrusted content** (V0.1.9–V0.1.11).
+- **Validator fixes and limits on untrusted content** (V0.1.9–V0.1.11).
 - **Database and sync** (track C), **data collection** (tracks D and F), **derived data** (track G), **the HTTP API** (track H) and **the web app** (tracks I to N).
 - **The other 48 entities** (track E).

@@ -31,6 +31,11 @@ It reports every problem with its file and field. See [docs/data-model.md](docs/
 - [Data model](docs/data-model.md)
 - [Release plan to V0.2.0](docs/RELEASES_0.1.md)
 - [Changelog](CHANGELOG.md)
+- [Threat model](docs/security/threat-model.md)
+
+## Security
+
+To report a vulnerability, use GitHub's private vulnerability reporting, as described in [SECURITY.md](SECURITY.md). Please don't open a public issue for it.
 
 ## License
 

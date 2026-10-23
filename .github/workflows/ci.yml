@@ -107,6 +107,9 @@ jobs:
       - name: Report workflow tests
         run: python -m unittest discover -s scripts/checks -p 'test_*.py'
 
+      - name: Reject dynamic application SQL
+        run: python scripts/checks/sql_guard.py
+
       - name: Tests
         run: cargo test --locked
 

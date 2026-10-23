@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_methods)]
 use engine::{
     http::Client,
     http_cache::{self, Fetch},

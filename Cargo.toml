@@ -5,7 +5,7 @@ members = ["crates/*"]
 [workspace.package]
 # The only place the version is written. Every release bumps it, and a test in
 # crates/cli/tests/version.rs checks it against the newest CHANGELOG.md entry.
-version = "0.1.41"
+version = "0.1.42"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 publish = false
@@ -19,6 +19,7 @@ unwrap_used = "warn"
 expect_used = "warn"
 dbg_macro = "deny"
 todo = "deny"
+disallowed_methods = "deny"
 
 [workspace.dependencies]
 model = { package = "cp-model", path = "crates/model" }

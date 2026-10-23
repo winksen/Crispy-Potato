@@ -1,3 +1,17 @@
 # Clippy settings for the lints in Cargo.toml (release index, V0.1.6).
 allow-unwrap-in-tests = true
 allow-expect-in-tests = true
+
+# Application SQL must use checked macros and bound values. Tests may build
+# fixtures with raw SQL; allowances live only in test files/modules.
+disallowed-methods = [
+  { path = "sqlx::query", reason = "Use checked sqlx query macros with bindings" },
+  { path = "sqlx::query_with", reason = "Use checked sqlx query macros with bindings" },
+  { path = "sqlx::query_as", reason = "Use checked sqlx query macros with bindings" },
+  { path = "sqlx::query_as_with", reason = "Use checked sqlx query macros with bindings" },
+  { path = "sqlx::query_scalar", reason = "Use checked sqlx query macros with bindings" },
+  { path = "sqlx::query_scalar_with", reason = "Use checked sqlx query macros with bindings" },
+  { path = "sqlx::raw_sql", reason = "Raw SQL is restricted to test fixtures" },
+  { path = "sqlx::QueryBuilder::new", reason = "Dynamic SQL is not permitted" },
+  { path = "sqlx::QueryBuilder::with_arguments", reason = "Dynamic SQL is not permitted" },
+]

@@ -52,6 +52,9 @@ Every new application setting must be documented here when introduced.
 | `STACKEXCHANGE_KEY` | Settings / Stack Exchange sources | Optional API key; missing means skipped |
 | `STACKEXCHANGE_KEY_FILE` | Settings | Optional UTF-8 secret file, at most 16 KiB; used when the environment key is empty or absent |
 | `SQLX_OFFLINE` | sqlx macros | `true` in `.cargo/config.toml`; builds use committed `.sqlx/` metadata. Set `false` only when preparing/checking against a migrated database |
+| `DB_POOL_MAX_CONNECTIONS` | Database pools | Default 5, allowed 1–20 per pool; account for the role's 20-connection limit across instances |
+| `DB_ACQUIRE_TIMEOUT_MS` | Database pools | Default 5,000 ms, allowed 100–60,000 ms |
+| `DB_STATEMENT_TIMEOUT_MS` | Database pools | Writer default 30,000 ms, allowed 100–300,000 ms; reader default and maximum 5,000 ms |
 
 The container's user and database are fixed as `cp_owner` and `crispy_potato`. Content-only commands need no database.
 
@@ -69,7 +72,7 @@ behavior are preserved.
 
 Set `$env:DATABASE_URL = 'postgres://cp_owner:<password>@localhost:5432/crispy_potato'` in PowerShell (URL-encode special password characters), then run `cargo run -p cp-cli -- migrate`. Running it again is safe: sqlx records applied migration checksums. Never edit a shipped migration; add another. `cargo test` uses this URL to create isolated test databases, so the test user needs CREATEDB. Never point tests at production.
 
-The engine pool allows five connections, waits at most five seconds to acquire one, drops idle connections after five minutes, and gives each statement 30 seconds. The CLI reports connection and migration failures without printing connection strings. New dependencies: sqlx 0.8 (Postgres, rustls, migrations, macros, JSON) and Tokio 1.
+The pool defaults to five connections and a five-second acquire deadline, drops idle connections after five minutes, and uses the settings above. Reader connections cap statement timeouts at five seconds and enable read-only transactions; writer connections preserve the role's read-only setting instead of disabling it. `application_name` is `cp-cli` for the current CLI and `cp-api` for the reader helper; future binaries use `connect_named` with their own name. The CLI reports connection and configuration failures without printing connection strings or supplied setting values.
 
 ## Checked queries (V0.1.22)
 
@@ -131,7 +134,23 @@ There are three attempts total (the roadmap's “giving up after 3 tries” crit
 
 ## Database roles (V0.1.23)
 
-After owner migrations, run `Get-Content scripts/db/roles.sql -Raw | docker compose exec -T db psql -U cp_owner -d crispy_potato -v ON_ERROR_STOP=1`. This idempotent script provisions `cp_reader` (SELECT) and `cp_writer` (SELECT/INSERT/UPDATE/DELETE and sequences), denies schema creation and temporary tables, and protects migration history. Run it in every database as the same owner that runs migrations so default privileges apply to future tables.
+After owner migrations, run `Get-Content scripts/db/roles.sql -Raw | docker compose exec -T db psql -U cp_owner -d crispy_potato -v ON_ERROR_STOP=1`. This idempotent script provisions `cp_reader` (explicit SELECT column grants) and `cp_writer` (SELECT/INSERT/UPDATE/DELETE and sequences), denies schema creation and temporary tables, and protects migration history. Run it in every database as the same owner that runs migrations. Since V0.1.42 reader default grants are revoked: each release adding a public table or column must grant it explicitly. Reapplying also clears prior column grants.
+
+Reader access excludes `http_cache`, `observations_quarantine`, `_sqlx_migrations`,
+`entities.content_hash`, `ingestion_runs.errors` and `source_entity_state.last_error`.
+Its allowed columns are spelled out in `roles.sql` and compared with an independent
+allow-list in the database test. Both roles have a 20-connection limit and a
+30-second idle-in-transaction timeout. Reader defaults are read-only, a five-second
+statement timeout and a one-second lock timeout; writer lock timeout is five
+seconds. Restart pools after provisioning because role defaults apply at login.
+Tests use `SET ROLE` plus the configured timeout to cancel a reader query without
+changing any operator password, and separately verify real pool session settings.
+
+The workspace denies non-macro `sqlx::query*`, `raw_sql` and `QueryBuilder`
+constructors through clippy. Test-only allowances permit fixtures. Run
+`python scripts/checks/sql_guard.py` to compile a temporary example that uses
+`format!`-built SQL and prove the lint rejects it; CI runs this check too. The
+fixture is never executed and is removed afterward.
 
 In the owner's interactive psql shell, use `\password cp_reader` and `\password cp_writer`. Set `DATABASE_URL` to the writer for sync/collection; `API_DATABASE_URL` to the reader for API access. Keep owner credentials only for migrations and isolated tests. Roles are cluster-wide and must not own objects or inherit other roles. The integration test switches dedicated connections into each role, checks reader SELECT and writer INSERT, and verifies permission-denied errors for reader writes, writer DDL and migration-history changes.
 

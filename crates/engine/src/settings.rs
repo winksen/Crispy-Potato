@@ -17,6 +17,56 @@ pub enum RequiredSecret {
     StackExchange,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DatabaseSettings {
+    pub max_connections: u32,
+    pub acquire_timeout_ms: u64,
+    pub statement_timeout_ms: u64,
+}
+
+impl DatabaseSettings {
+    pub fn load(reader: bool) -> Result<Self, String> {
+        Self::from_lookup(|name| std::env::var(name).ok(), reader)
+    }
+    pub fn from_lookup(
+        lookup: impl Fn(&str) -> Option<String>,
+        reader: bool,
+    ) -> Result<Self, String> {
+        fn number(
+            lookup: &impl Fn(&str) -> Option<String>,
+            name: &str,
+            default: u64,
+            min: u64,
+            max: u64,
+        ) -> Result<u64, String> {
+            match lookup(name) {
+                None => Ok(default),
+                Some(value) => value
+                    .parse::<u64>()
+                    .ok()
+                    .filter(|value| (min..=max).contains(value))
+                    .ok_or_else(|| format!("{name} must be between {min} and {max}")),
+            }
+        }
+        let statement = number(
+            &lookup,
+            "DB_STATEMENT_TIMEOUT_MS",
+            if reader { 5000 } else { 30000 },
+            100,
+            300000,
+        )?;
+        Ok(Self {
+            max_connections: number(&lookup, "DB_POOL_MAX_CONNECTIONS", 5, 1, 20)? as u32,
+            acquire_timeout_ms: number(&lookup, "DB_ACQUIRE_TIMEOUT_MS", 5000, 100, 60000)?,
+            statement_timeout_ms: if reader {
+                statement.min(5000)
+            } else {
+                statement
+            },
+        })
+    }
+}
+
 impl fmt::Display for Settings {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -104,6 +154,43 @@ fn read(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn database_settings_validate_bounds_and_cap_reader_deadlines() {
+        let writer = DatabaseSettings::from_lookup(|_| None, false).unwrap();
+        assert_eq!(
+            writer,
+            DatabaseSettings {
+                max_connections: 5,
+                acquire_timeout_ms: 5000,
+                statement_timeout_ms: 30000
+            }
+        );
+        assert_eq!(
+            DatabaseSettings::from_lookup(|_| None, true)
+                .unwrap()
+                .statement_timeout_ms,
+            5000
+        );
+        let reader = DatabaseSettings::from_lookup(
+            |name| (name == "DB_STATEMENT_TIMEOUT_MS").then(|| "300000".into()),
+            true,
+        )
+        .unwrap();
+        assert_eq!(reader.statement_timeout_ms, 5000);
+        for (name, value) in [
+            ("DB_POOL_MAX_CONNECTIONS", "0"),
+            ("DB_POOL_MAX_CONNECTIONS", "21"),
+            ("DB_ACQUIRE_TIMEOUT_MS", "60001"),
+            ("DB_STATEMENT_TIMEOUT_MS", "0"),
+            ("DB_STATEMENT_TIMEOUT_MS", "private-invalid-value"),
+        ] {
+            let error =
+                DatabaseSettings::from_lookup(|key| (key == name).then(|| value.into()), false)
+                    .unwrap_err();
+            assert!(error.starts_with(name));
+            assert!(!error.contains("private-invalid-value"));
+        }
+    }
     #[test]
     fn debug_display_and_headers_redact_credentials() {
         let settings = Settings::from_lookup(|name| match name {

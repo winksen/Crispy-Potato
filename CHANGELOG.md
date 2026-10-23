@@ -2,6 +2,27 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.42 (2026-10-22)
+
+Database readers have explicit column grants and bounded sessions, and application SQL is checked by clippy.
+
+### Security
+- **Reader privileges.** The role script grants only named public-data columns and removes automatic future-table access. HTTP cache, quarantine, migration history, content hashes, run errors and per-entity failure text remain unreadable. Reapplying also clears old column grants.
+- **Sessions.** Reader defaults are read-only with a five-second statement timeout; both roles have connection limits, lock timeouts and idle-transaction timeouts. Reader pools preserve the timeout cap and read-only behavior. CLI and API pools identify themselves through application_name.
+- **SQL guard.** Clippy denies non-macro query constructors, raw_sql and QueryBuilder; allowances exist only in test files. Checked macros continue to use bound values.
+
+### Added
+- **Pool settings.** DB_POOL_MAX_CONNECTIONS, DB_ACQUIRE_TIMEOUT_MS and DB_STATEMENT_TIMEOUT_MS have validated bounds and documented defaults. Invalid numeric configuration is reported without reproducing supplied values.
+
+### Checks
+- fmt, clippy, 106 Rust tests, ten reporting tests, content validation, schemas, SQL metadata and workflow audit pass. The independent reader-column allow-list, session settings and statement cancellation pass; a format!-built query with the SQLx safety wrapper still fails the Clippy guard.
+
+### Not done
+- Remote CI and live provider checks were not run. The reader timeout test applies the declared role setting after SET ROLE, which does not apply login defaults; operator passwords are unchanged.
+
+### Upgrading
+- Reapply scripts/db/roles.sql as the migration owner in each database and restart application pools so role defaults take effect. New tables must receive explicit reader column grants in the release that adds them. No migration or dependency is added.
+
 ## V0.1.41 (2026-10-22)
 
 Collection and curated sync write complete batches with a fixed number of database statements.

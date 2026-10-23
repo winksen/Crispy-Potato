@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_methods)]
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 use sqlx::PgPool;
 use std::{fs, path::Path};

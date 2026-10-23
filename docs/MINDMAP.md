@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.41` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.42` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -320,3 +320,9 @@ Checks: fmt, clippy, 103 Rust tests, ten reporting tests, content, schemas and S
 Collection locks each entity once, reads affected series baselines and historical points together, and checks candidates in date order in memory. Held points never become baselines; duplicate identities retain the last applicable input. Dry runs use the same evaluation. Observations, quarantine, releases and facts use bulk UNNEST writes. Curated sync batches every table, including entities and reverse relations, while preserving atomic snapshots, unchanged skips and retirement history. A test-only log observer counts real SQLx statements without retaining SQL or parameters.
 
 Checks: fmt, clippy, 104 Rust tests, ten reporting tests, content, schemas, SQL metadata and cargo deny pass. SQLx records five statements for the 1,000-observation transaction and 16 for full sync with either two or 102 entities. The observation budget measures its transaction, excluding run setup and other tables. Remote CI and live sources were not run.
+
+### V0.1.42 -- Explicit reader grants and bounded database sessions
+
+Reader access names public columns explicitly, excludes private collection diagnostics and grants nothing on future tables. Both roles have connection, lock and idle-transaction limits; readers default to read-only with a five-second statement deadline. Validated pool settings control connection count, acquire timeout and statement timeout, and pools identify their application. Clippy forbids unchecked SQL constructors outside tests.
+
+Checks: fmt, clippy, 106 Rust tests, ten reporting tests, content, schemas, SQL metadata and workflow audit pass. Independent privilege checks and reader statement cancellation pass; the negative SQL fixture proves Clippy rejects formatted SQL even with SQLx's safety wrapper. Remote CI and live providers were not run.

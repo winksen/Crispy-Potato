@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_methods)]
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 use engine::{observations::Observation, quality};
 use sqlx::PgPool;

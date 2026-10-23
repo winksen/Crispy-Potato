@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_methods)]
 use engine::{
     ingest::{self, Batch, Context, FetchFuture, Source, SourceInfo},
     observations::Observation,

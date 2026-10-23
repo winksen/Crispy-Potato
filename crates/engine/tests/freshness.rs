@@ -1,3 +1,4 @@
+#![allow(clippy::disallowed_methods)]
 use engine::freshness;
 use sqlx::PgPool;
 

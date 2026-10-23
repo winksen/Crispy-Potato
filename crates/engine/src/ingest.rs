@@ -200,11 +200,7 @@ pub async fn run_with_settings(
                 continue;
             }
             if dry_run {
-                for o in &batch.observations {
-                    if let Some(held) = crate::quality::inspect(pool, o).await? {
-                        report.held.push(held);
-                    }
-                }
+                report.held.extend(crate::quality::inspect_batch(pool, &batch.observations).await?);
             } else {
                 match store(pool, entity, info.id, &batch).await {
                     Ok(held) => report.held.extend(held),
@@ -258,18 +254,31 @@ async fn store(
     batch: &Batch,
 ) -> Result<Vec<crate::quality::Held>, Error> {
     let mut tx = pool.begin().await?;
-    let mut held = Vec::new();
-    for observation in &batch.observations {
-        if let Some(value) = crate::quality::store(&mut tx, observation).await? {
-            held.push(value);
-        }
+    if batch.observations.is_empty() {
+        sqlx::query!("SELECT id FROM entities WHERE id=$1 FOR UPDATE", entity.id)
+            .fetch_one(&mut *tx)
+            .await?;
     }
-    for release in &batch.releases {
-        sqlx::query!("INSERT INTO releases (entity_id,version,released_at,eol_at,lts,source_id) VALUES ($1,$2,$3::text::date,$4::text::date,$5,$6) ON CONFLICT (entity_id,version,source_id) DO UPDATE SET released_at=EXCLUDED.released_at,eol_at=EXCLUDED.eol_at,lts=EXCLUDED.lts", entity.id, release.version, release.released_at, release.eol_at, release.lts, source).execute(&mut *tx).await?;
-    }
-    for fact in &batch.facts {
-        sqlx::query!("INSERT INTO facts (entity_id,field,value,source_id) VALUES ($1,$2,$3,$4) ON CONFLICT (entity_id,field,source_id) DO UPDATE SET value=EXCLUDED.value,collected_at=now()", entity.id, fact.field, fact.value, source).execute(&mut *tx).await?;
-    }
+    let held = crate::quality::store_batch(&mut tx, &batch.observations).await?;
+    // Last occurrence wins for repeated keys, matching sequential upserts.
+    let releases: std::collections::BTreeMap<_, _> = batch
+        .releases
+        .iter()
+        .map(|r| (r.version.clone(), r))
+        .collect();
+    let versions: Vec<_> = releases.keys().cloned().collect();
+    let released: Vec<_> = releases.values().map(|r| r.released_at.clone()).collect();
+    let eol: Vec<_> = releases.values().map(|r| r.eol_at.clone()).collect();
+    let lts: Vec<_> = releases.values().map(|r| r.lts).collect();
+    sqlx::query!("INSERT INTO releases (entity_id,version,released_at,eol_at,lts,source_id) SELECT $1,version,released::date,eol::date,lts,$2 FROM UNNEST($3::text[],$4::text[],$5::text[],$6::bool[]) AS r(version,released,eol,lts) ON CONFLICT (entity_id,version,source_id) DO UPDATE SET released_at=EXCLUDED.released_at,eol_at=EXCLUDED.eol_at,lts=EXCLUDED.lts", entity.id,source,&versions,&released as &[Option<String>],&eol as &[Option<String>],&lts).execute(&mut *tx).await?;
+    let facts: std::collections::BTreeMap<_, _> = batch
+        .facts
+        .iter()
+        .map(|f| (f.field.clone(), f.value.clone()))
+        .collect();
+    let fields: Vec<_> = facts.keys().cloned().collect();
+    let values: Vec<_> = facts.into_values().collect();
+    sqlx::query!("INSERT INTO facts (entity_id,field,value,source_id) SELECT $1,field,value,$2 FROM UNNEST($3::text[],$4::jsonb[]) AS f(field,value) ON CONFLICT (entity_id,field,source_id) DO UPDATE SET value=EXCLUDED.value,collected_at=now()",entity.id,source,&fields,&values).execute(&mut *tx).await?;
     for update in &batch.cache {
         http_cache::persist(&mut tx, update).await?;
     }

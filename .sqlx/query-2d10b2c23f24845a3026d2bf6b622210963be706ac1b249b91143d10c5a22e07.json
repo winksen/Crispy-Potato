@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO releases (entity_id,version,released_at,eol_at,lts,source_id) SELECT $1,version,released::date,eol::date,lts,$2 FROM UNNEST($3::text[],$4::text[],$5::text[],$6::bool[]) AS r(version,released,eol,lts) ON CONFLICT (entity_id,version,source_id) DO UPDATE SET released_at=EXCLUDED.released_at,eol_at=EXCLUDED.eol_at,lts=EXCLUDED.lts",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "TextArray",
+        "TextArray",
+        "TextArray",
+        "BoolArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2d10b2c23f24845a3026d2bf6b622210963be706ac1b249b91143d10c5a22e07"
+}

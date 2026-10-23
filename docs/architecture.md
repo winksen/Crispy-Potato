@@ -97,6 +97,13 @@ docs/
 
 Each source handles its own rate limits, retries, conditional requests and an identifying User-Agent.
 
+Since V0.1.41, the shared runner locks an entity once per batch, fetches its affected
+series' baselines in one query and applies plausibility checks chronologically in
+memory. Bulk `UNNEST` upserts write observations, quarantine holds, releases and
+facts. Curated sync likewise batches every table while preserving a single atomic
+snapshot transaction. Statement-count regression tests cover a 1,000-observation
+transaction and catalogs with two and 102 entities.
+
 **Derivation.** Computes values from the raw data:
 
 - trends (12-month change);

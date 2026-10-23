@@ -2,6 +2,24 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.41 (2026-10-22)
+
+Collection and curated sync write complete batches with a fixed number of database statements.
+
+### Changed
+- **Observation batches.** Entity locks are acquired once, existing baselines and in-range historical points are read together, and candidates are checked in date order in memory. Held values never become baselines. Observations and quarantine holds use bulk UNNEST upserts; repeated keys retain sequential last-write behavior. Dry runs use the same batch evaluation.
+- **Bulk writes.** Releases and facts use one upsert per table. Sync batches entities, aliases, reverse relations, samples, vocabulary terms and planned ids while preserving the existing atomic snapshot and retirement behavior.
+- **Query-count regression.** A test-only log dependency observes SQLx statement events without retaining or printing SQL or parameters, and checks large observation batches and differently sized catalogs.
+
+### Checks
+- fmt, clippy, 104 Rust tests, ten reporting tests, content, schemas, SQL metadata and cargo deny pass. SQLx records five statements for the 1,000-observation transaction and 16 for full sync with either two or 102 entities. Historical correction, reversed input and duplicate-key cases pass; existing quarantine and sync tests remain unchanged.
+
+### Not done
+- Remote CI and live source checks were not run; this release changes database write paths. The measured observation transaction excludes run setup, HTTP collection, release/fact writes and freshness bookkeeping.
+
+### Upgrading
+- Nothing to do. No migration or production dependency is added.
+
 ## V0.1.40 (2026-10-22)
 
 Collected values are bounded before serving and quarantine records retain one review entry per measurement.

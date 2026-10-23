@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO entities (id,kind,name,document,content_hash) SELECT * FROM UNNEST($1::text[],$2::text[],$3::text[],$4::jsonb[],$5::text[]) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "TextArray",
+        "JsonbArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e5ba222d1f6f02b25176c8a86e294eb9c3296ad6143b172b5c60e5bd9ee08b0d"
+}

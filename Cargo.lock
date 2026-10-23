@@ -363,7 +363,7 @@ checksum = "7f8f80099a98041a3d1622845c271458a2d73e688351bf3cb999266764b81d48"
 
 [[package]]
 name = "cp-cli"
-version = "0.1.40"
+version = "0.1.41"
 dependencies = [
  "clap",
  "cp-engine",
@@ -374,10 +374,11 @@ dependencies = [
 
 [[package]]
 name = "cp-engine"
-version = "0.1.40"
+version = "0.1.41"
 dependencies = [
  "cp-model",
  "httpdate",
+ "log",
  "reqwest",
  "rustls",
  "schemars",
@@ -395,7 +396,7 @@ dependencies = [
 
 [[package]]
 name = "cp-model"
-version = "0.1.40"
+version = "0.1.41"
 dependencies = [
  "indexmap",
  "schemars",

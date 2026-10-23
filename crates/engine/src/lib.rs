@@ -13,6 +13,7 @@ pub mod limits;
 pub mod links;
 pub mod observations;
 pub mod quality;
+mod quality_batch;
 mod run_guard;
 pub mod scaffold;
 pub mod schema;

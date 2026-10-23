@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO aliases (alias,entity_id) SELECT * FROM UNNEST($1::text[],$2::text[])",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7621259369ead645da85ceac588ede796efd5c61b2c0b9c0cef3048bbbdf1b4d"
+}

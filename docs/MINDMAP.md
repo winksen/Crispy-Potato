@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.40` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.41` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -314,3 +314,9 @@ Checks: fmt, clippy, 95 Rust tests, ten reporting tests, content validation and 
 Observations outside 2008-01-01 through tomorrow UTC, and counts at or above 10^15, cannot become baselines or be manually released. Migration 0005 preserves old invalid values in quarantine, merges duplicate holds and adds identity and ordering indexes plus observation constraints. Repeated holds update their record; listing supports entity/source filters and bounded one-based pages, newest first. Release dates are bounded to 1940 through next year, with later announced end-of-life dates allowed. Versions and nested fact strings over 256 characters are rejected before sanitization, preserving distinct identities.
 
 Checks: fmt, clippy, 103 Rust tests, ten reporting tests, content, schemas and SQL metadata pass. Remote CI and live source checks were not run.
+
+### V0.1.41 — Bulk collection and content writes
+
+Collection locks each entity once, reads affected series baselines and historical points together, and checks candidates in date order in memory. Held points never become baselines; duplicate identities retain the last applicable input. Dry runs use the same evaluation. Observations, quarantine, releases and facts use bulk UNNEST writes. Curated sync batches every table, including entities and reverse relations, while preserving atomic snapshots, unchanged skips and retirement history. A test-only log observer counts real SQLx statements without retaining SQL or parameters.
+
+Checks: fmt, clippy, 104 Rust tests, ten reporting tests, content, schemas, SQL metadata and cargo deny pass. SQLx records five statements for the 1,000-observation transaction and 16 for full sync with either two or 102 entities. The observation budget measures its transaction, excluding run setup and other tables. Remote CI and live sources were not run.

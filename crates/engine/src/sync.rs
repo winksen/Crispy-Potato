@@ -115,19 +115,27 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
     sqlx::query!("DELETE FROM planned_ids")
         .execute(&mut *tx)
         .await?;
-    let mut changed = 0;
+    let mut kinds = Vec::new();
+    let mut names = Vec::new();
+    let mut documents = Vec::new();
+    let mut hashes = Vec::new();
+    let mut aliases = Vec::new();
+    let mut alias_entities = Vec::new();
+    let mut relation_entities = Vec::new();
+    let mut relation_kinds = Vec::new();
+    let mut relation_targets = Vec::new();
+    let mut sample_entities = Vec::new();
+    let mut sample_paths = Vec::new();
+    let mut sample_texts = Vec::new();
     for entity in &content.entities {
         let document = serde_json::to_value(entity)?;
-        let hash = sha256_hex(serde_json::to_vec(&document)?);
-        changed += sqlx::query!("INSERT INTO entities (id,kind,name,document,content_hash) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired" ,&entity.id, entity.kind.to_string(), &entity.name, &document, &hash).execute(&mut *tx).await?.rows_affected();
+        hashes.push(sha256_hex(serde_json::to_vec(&document)?));
+        kinds.push(entity.kind.to_string());
+        names.push(entity.name.clone());
+        documents.push(document);
         for alias in &entity.aliases {
-            sqlx::query!(
-                "INSERT INTO aliases (alias,entity_id) VALUES ($1,$2)",
-                alias,
-                &entity.id
-            )
-            .execute(&mut *tx)
-            .await?;
+            aliases.push(alias.clone());
+            alias_entities.push(entity.id.clone());
         }
         for (relation, targets) in entity.relations.iter() {
             let reverse = match relation {
@@ -141,7 +149,9 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
                     (&entity.id, relation, target),
                     (target, reverse, &entity.id),
                 ] {
-                    sqlx::query!("INSERT INTO relations (entity_id,relation,target_id) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING" ,from, kind, to).execute(&mut *tx).await?;
+                    relation_entities.push(from.clone());
+                    relation_kinds.push(kind.to_owned());
+                    relation_targets.push(to.clone());
                 }
             }
         }
@@ -152,45 +162,53 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
                     .ok_or("sample missing from snapshot")?
                     .clone(),
             )?;
-            sqlx::query!(
-                "INSERT INTO samples (entity_id,path,text) VALUES ($1,$2,$3)",
-                &entity.id,
-                sample,
-                text
-            )
-            .execute(&mut *tx)
-            .await?;
+            sample_entities.push(entity.id.clone());
+            sample_paths.push(sample.clone());
+            sample_texts.push(text);
         }
     }
+    let changed = sqlx::query!("INSERT INTO entities (id,kind,name,document,content_hash) SELECT * FROM UNNEST($1::text[],$2::text[],$3::text[],$4::jsonb[],$5::text[]) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired",&ids,&kinds,&names,&documents,&hashes).execute(&mut *tx).await?.rows_affected();
+    sqlx::query!(
+        "INSERT INTO aliases (alias,entity_id) SELECT * FROM UNNEST($1::text[],$2::text[])",
+        &aliases,
+        &alias_entities
+    )
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query!("INSERT INTO relations (entity_id,relation,target_id) SELECT * FROM UNNEST($1::text[],$2::text[],$3::text[]) ON CONFLICT DO NOTHING",&relation_entities,&relation_kinds,&relation_targets).execute(&mut *tx).await?;
+    sqlx::query!("INSERT INTO samples (entity_id,path,text) SELECT * FROM UNNEST($1::text[],$2::text[],$3::text[])",&sample_entities,&sample_paths,&sample_texts).execute(&mut *tx).await?;
+    let mut planned_ids = Vec::new();
+    let mut planned_kinds = Vec::new();
     for kind in model::Kind::ALL {
         for id in content.planned.ids(kind) {
-            sqlx::query!(
-                "INSERT INTO planned_ids (id,kind) VALUES ($1,$2)",
-                id,
-                kind.to_string()
-            )
-            .execute(&mut *tx)
-            .await?;
+            planned_ids.push(id.clone());
+            planned_kinds.push(kind.to_string());
         }
     }
+    sqlx::query!(
+        "INSERT INTO planned_ids (id,kind) SELECT * FROM UNNEST($1::text[],$2::text[])",
+        &planned_ids,
+        &planned_kinds
+    )
+    .execute(&mut *tx)
+    .await?;
     let mut vocab = serde_json::to_value(&content.vocab.traits)?;
     vocab["domains"] = serde_json::to_value(&content.vocab.domains)?;
+    let mut groups_out = Vec::new();
+    let mut terms_out = Vec::new();
+    let mut definitions = Vec::new();
     if let Some(groups) = vocab.as_object() {
         for (group, terms) in groups {
             if let Some(terms) = terms.as_object() {
                 for (term, document) in terms {
-                    sqlx::query!(
-                        "INSERT INTO vocabulary_terms (vocabulary,term,document) VALUES ($1,$2,$3)",
-                        group,
-                        term,
-                        document
-                    )
-                    .execute(&mut *tx)
-                    .await?;
+                    groups_out.push(group.clone());
+                    terms_out.push(term.clone());
+                    definitions.push(document.clone());
                 }
             }
         }
     }
+    sqlx::query!("INSERT INTO vocabulary_terms (vocabulary,term,document) SELECT * FROM UNNEST($1::text[],$2::text[],$3::jsonb[])",&groups_out,&terms_out,&definitions).execute(&mut *tx).await?;
     sqlx::query!("INSERT INTO meta (key,value) VALUES ('content_version',$1) ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value" ,&version).execute(&mut *tx).await?;
     tx.commit().await?;
     Ok(Report {

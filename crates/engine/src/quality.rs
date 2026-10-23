@@ -43,54 +43,29 @@ pub fn reason(o: &Observation, previous: Option<f64>) -> Option<&'static str> {
     None
 }
 
-async fn previous(
-    tx: &mut Transaction<'_, Postgres>,
-    o: &Observation,
-) -> Result<Option<f64>, sqlx::Error> {
-    sqlx::query_scalar!("SELECT value FROM observations WHERE entity_id=$1 AND source_id=$2 AND metric=$3 AND period=$4 AND observed_at <= $5::text::date ORDER BY observed_at DESC LIMIT 1", o.entity_id, o.source_id, o.metric, o.period, o.observed_at).fetch_optional(&mut **tx).await
+pub async fn inspect(pool: &PgPool, o: &Observation) -> Result<Option<Held>, Error> {
+    Ok(inspect_batch(pool, std::slice::from_ref(o)).await?.pop())
 }
 
-pub async fn inspect(pool: &PgPool, o: &Observation) -> Result<Option<Held>, Error> {
+pub async fn inspect_batch(pool: &PgPool, values: &[Observation]) -> Result<Vec<Held>, Error> {
     let mut tx = pool.begin().await?;
-    let last = if reason(o, None).is_some() {
-        None
-    } else {
-        previous(&mut tx, o).await?
-    };
+    let held = crate::quality_batch::process(&mut tx, values, false).await?;
     tx.rollback().await?;
-    Ok(reason(o, last).map(|reason| Held {
-        observation: o.clone(),
-        reason: reason.into(),
-    }))
+    Ok(held)
 }
 
 pub async fn store(
     tx: &mut Transaction<'_, Postgres>,
     o: &Observation,
 ) -> Result<Option<Held>, Error> {
-    // Serialize writers for this entity before reading the baseline.
-    sqlx::query!(
-        "SELECT id FROM entities WHERE id=$1 FOR UPDATE",
-        o.entity_id
-    )
-    .fetch_one(&mut **tx)
-    .await?;
-    let last = if reason(o, None).is_some() {
-        None
-    } else {
-        previous(tx, o).await?
-    };
-    if let Some(reason) = reason(o, last) {
-        let document = serde_json::to_value(o)?;
-        sqlx::query!("INSERT INTO observations_quarantine (entity_id,source_id,document,reason) VALUES ($1,$2,$3,$4) ON CONFLICT (entity_id,source_id,(document->>'metric'),(document->>'period'),(document->>'observed_at')) DO UPDATE SET document=EXCLUDED.document,reason=EXCLUDED.reason,held_at=now()", o.entity_id, o.source_id, document, reason).execute(&mut **tx).await?;
-        Ok(Some(Held {
-            observation: o.clone(),
-            reason: reason.into(),
-        }))
-    } else {
-        observations::upsert(tx, o).await?;
-        Ok(None)
-    }
+    Ok(store_batch(tx, std::slice::from_ref(o)).await?.pop())
+}
+
+pub async fn store_batch(
+    tx: &mut Transaction<'_, Postgres>,
+    values: &[Observation],
+) -> Result<Vec<Held>, Error> {
+    crate::quality_batch::process(tx, values, true).await
 }
 
 pub async fn list(pool: &PgPool) -> Result<serde_json::Value, Error> {

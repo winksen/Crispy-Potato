@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO planned_ids (id,kind) SELECT * FROM UNNEST($1::text[],$2::text[])",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "038e22bd25b76b2788f0e403f9405249cd3cd1227dc72ec6d70ff1acc8f815b6"
+}

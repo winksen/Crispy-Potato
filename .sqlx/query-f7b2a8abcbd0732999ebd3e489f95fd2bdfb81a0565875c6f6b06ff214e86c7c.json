@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO samples (entity_id,path,text) SELECT * FROM UNNEST($1::text[],$2::text[],$3::text[])",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f7b2a8abcbd0732999ebd3e489f95fd2bdfb81a0565875c6f6b06ff214e86c7c"
+}

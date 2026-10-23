@@ -28,5 +28,6 @@ httpdate.workspace = true
 secrecy.workspace = true
 
 [dev-dependencies]
+log.workspace = true
 wiremock.workspace = true
 tokio = { workspace = true, features = ["test-util"] }

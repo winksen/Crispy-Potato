@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO vocabulary_terms (vocabulary,term,document) SELECT * FROM UNNEST($1::text[],$2::text[],$3::jsonb[])",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "JsonbArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "a7c674ed8215cf4901bb56457ea9c1ad88ec682a667d164edcac1901b11b1d52"
+}

@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO facts (entity_id,field,value,source_id) SELECT $1,field,value,$2 FROM UNNEST($3::text[],$4::jsonb[]) AS f(field,value) ON CONFLICT (entity_id,field,source_id) DO UPDATE SET value=EXCLUDED.value,collected_at=now()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "TextArray",
+        "JsonbArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5eab732a1973e97c2aa7778a8c3e9de85f44aef5d559610a7999d988dcc2ba06"
+}

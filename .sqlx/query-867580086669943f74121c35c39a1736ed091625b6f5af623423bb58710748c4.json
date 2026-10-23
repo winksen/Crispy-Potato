@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO relations (entity_id,relation,target_id) SELECT * FROM UNNEST($1::text[],$2::text[],$3::text[]) ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "TextArray",
+        "TextArray",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "867580086669943f74121c35c39a1736ed091625b6f5af623423bb58710748c4"
+}

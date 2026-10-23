@@ -59,6 +59,12 @@ The container's user and database are fixed as `cp_owner` and `crispy_potato`. C
 
 After migrations, run `cargo run -p cp-cli -- sync` (optionally `--content <folder>`). It validates a stable snapshot, then writes everything in one transaction guarded by an advisory lock. Invalid content writes nothing. A second identical run prints `0 changed, 0 retired; content unchanged`. A sample-only or vocabulary-only edit still updates the content version even when no entity document changes. Removed entities retire; their observations remain. Sync needs data-write privileges, not schema ownership.
 
+Since V0.1.41 every curated table uses one bulk `UNNEST` insert/upsert per changed
+snapshot, including entities and inverse relations. Database statement count is
+independent of the number of entities; validation and serialization still scale
+with content size. Existing atomicity, unchanged-snapshot skips and retirement
+behavior are preserved.
+
 ## Migrations (V0.1.19)
 
 Set `$env:DATABASE_URL = 'postgres://cp_owner:<password>@localhost:5432/crispy_potato'` in PowerShell (URL-encode special password characters), then run `cargo run -p cp-cli -- migrate`. Running it again is safe: sqlx records applied migration checksums. Never edit a shipped migration; add another. `cargo test` uses this URL to create isolated test databases, so the test user needs CREATEDB. Never point tests at production.
@@ -98,6 +104,16 @@ Counts below zero and percentages outside 0–100 are now held rather than rejec
 `cargo run -p cp-cli -- ingest <source> [--entity <id>] [--dry-run]` invokes registered adapters. Concrete providers arrive in track F (V0.1.66 onward); until then unknown source names fail explicitly. The `Source` contract supplies provenance, schedule, applicability and a typed batch of observations, releases and facts, plus accepted HTTP validators. The runner reads active synced entities, records real runs, commits each entity atomically and continues after fetch or storage failures. Mixed success gives `partial`; all failures give `failed`. Counts are entities accepted or unchanged, not individual rows.
 
 Dry runs print the batches they would store and write nothing, including no run or source rows. The Postgres fake-source test verifies a successful measurement, a failed second entity and a recorded partial run. Diagnostics store entity ids and fixed error categories, never response bodies or URLs. No settings added.
+
+Since V0.1.41 collection locks each entity once per batch. One query fetches the
+baseline before each affected series' date range and existing points within that
+range; candidates are checked in date order in memory. Rejected candidates do not
+advance the baseline. Historical corrections preserve the prior at-or-before-date
+comparison. Observations, quarantine, releases and facts each use a bulk upsert,
+with repeated keys preserving the last applicable input. Dry runs share this
+evaluation. Cache validators and freshness still commit with accepted data in the
+same entity transaction. The statement-budget test counts real SQLx query events,
+including a positive control, without retaining SQL text or parameters.
 
 Since V0.1.28 adapters parse response bytes with `untrusted::decode<T>` into source-specific structs. It enforces the 20 MiB cap and JSON recursion limit and returns fixed errors for missing fields and malformed JSON. The runner sanitizes batches before storage or dry-run output. Since V0.1.40 versions and fact strings over 256 Unicode characters are rejected before sanitization, rather than truncated; controls, bidi/invisible characters and angle brackets are removed from accepted strings. Identifiers are bounded; numbers must be finite; dates must be full dates. Release dates must be from 1940 through next year, while announced end-of-life dates may extend through year 9999. Fact JSON is limited to depth 16 and 10,000 values; batches to 10,000 records. Bad responses fail only their entity. Future UI code must still render these fields as text.
 

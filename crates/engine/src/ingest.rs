@@ -132,113 +132,123 @@ pub async fn run_with_settings(
             .await?,
         )
     };
-    let http = Client::new()?;
-    let context = Context {
-        pool,
-        http: &http,
-        settings,
-    };
-    let mut report = Report {
-        run_id,
-        status: "success",
-        changed: 0,
-        unchanged: 0,
-        errors: Vec::new(),
-        preview: Vec::new(),
-        held: Vec::new(),
-        warnings: Vec::new(),
-    };
-    if source
-        .required_secret()
-        .is_some_and(|secret| !settings.has(secret))
-    {
-        report.status = "skipped";
-        report
-            .warnings
-            .push("required credential is missing; source skipped");
-        if let Some(id) = run_id {
-            sqlx::query!("UPDATE ingestion_runs SET finished_at=now(),status='skipped',errors='[{\"reason\":\"required credential is missing\"}]' WHERE id=$1", id).execute(pool).await?;
-        }
-        return Ok(report);
-    }
-    for entity in entities.iter().filter(|e| source.applies(e)) {
-        if !dry_run {
-            crate::freshness::attempt(pool, &entity.id, info.id).await?;
-        }
-        let mut batch = match source.fetch(&context, entity).await {
-            Ok(batch) => batch,
-            Err(_) => {
-                report.errors.push(Failure {
-                    entity: entity.id.clone(),
-                    reason: "fetch failed",
-                });
-                continue;
-            }
+    let mut guard = crate::run_guard::RunGuard::new(pool, run_id);
+    let result: Result<Report, Error> = async {
+        let http = Client::new()?;
+        let context = Context {
+            pool,
+            http: &http,
+            settings,
         };
-        if crate::untrusted::clean(&mut batch).is_err() {
-            report.errors.push(Failure {
-                entity: entity.id.clone(),
-                reason: "invalid source response",
-            });
-            continue;
-        }
-        if batch
-            .observations
-            .iter()
-            .any(|o| o.entity_id != entity.id || o.source_id != info.id)
-            || (batch.unchanged
-                && (!batch.observations.is_empty()
-                    || !batch.releases.is_empty()
-                    || !batch.facts.is_empty()))
+        let mut report = Report {
+            run_id,
+            status: "success",
+            changed: 0,
+            unchanged: 0,
+            errors: Vec::new(),
+            preview: Vec::new(),
+            held: Vec::new(),
+            warnings: Vec::new(),
+        };
+        if source
+            .required_secret()
+            .is_some_and(|secret| !settings.has(secret))
         {
-            report.errors.push(Failure {
-                entity: entity.id.clone(),
-                reason: "invalid batch identity or unchanged payload",
-            });
-            continue;
-        }
-        if dry_run {
-            for o in &batch.observations {
-                if let Some(held) = crate::quality::inspect(pool, o).await? {
-                    report.held.push(held);
-                }
+            report.status = "skipped";
+            report
+                .warnings
+                .push("required credential is missing; source skipped");
+            if let Some(id) = run_id {
+                sqlx::query!("UPDATE ingestion_runs SET finished_at=now(),status='skipped',errors='[{\"reason\":\"required credential is missing\"}]' WHERE id=$1", id).execute(pool).await?;
             }
-        } else {
-            match store(pool, entity, info.id, &batch).await {
-                Ok(held) => report.held.extend(held),
+            return Ok(report);
+        }
+        for entity in entities.iter().filter(|e| source.applies(e)) {
+            if !dry_run {
+                crate::freshness::attempt(pool, &entity.id, info.id).await?;
+            }
+            let mut batch = match source.fetch(&context, entity).await {
+                Ok(batch) => batch,
                 Err(_) => {
                     report.errors.push(Failure {
                         entity: entity.id.clone(),
-                        reason: "storage failed; entity rolled back",
+                        reason: "fetch failed",
                     });
                     continue;
                 }
+            };
+            if crate::untrusted::clean(&mut batch).is_err() {
+                report.errors.push(Failure {
+                    entity: entity.id.clone(),
+                    reason: "invalid source response",
+                });
+                continue;
+            }
+            if batch
+                .observations
+                .iter()
+                .any(|o| o.entity_id != entity.id || o.source_id != info.id)
+                || (batch.unchanged
+                    && (!batch.observations.is_empty()
+                        || !batch.releases.is_empty()
+                        || !batch.facts.is_empty()))
+            {
+                report.errors.push(Failure {
+                    entity: entity.id.clone(),
+                    reason: "invalid batch identity or unchanged payload",
+                });
+                continue;
+            }
+            if dry_run {
+                for o in &batch.observations {
+                    if let Some(held) = crate::quality::inspect(pool, o).await? {
+                        report.held.push(held);
+                    }
+                }
+            } else {
+                match store(pool, entity, info.id, &batch).await {
+                    Ok(held) => report.held.extend(held),
+                    Err(_) => {
+                        report.errors.push(Failure {
+                            entity: entity.id.clone(),
+                            reason: "storage failed; entity rolled back",
+                        });
+                        continue;
+                    }
+                }
+            }
+            if batch.unchanged {
+                report.unchanged += 1;
+            } else {
+                report.changed += 1;
+            }
+            if dry_run {
+                report.preview.push((entity.id.clone(), batch));
             }
         }
-        if batch.unchanged {
-            report.unchanged += 1;
-        } else {
-            report.changed += 1;
+        if !report.errors.is_empty() {
+            report.status = if report.changed + report.unchanged == 0 {
+                "failed"
+            } else {
+                "partial"
+            };
         }
-        if dry_run {
-            report.preview.push((entity.id.clone(), batch));
+        if let Some(id) = run_id {
+            for failure in &report.errors {
+                crate::freshness::failure(pool, &failure.entity, info.id, failure.reason).await?;
+            }
+            let errors = serde_json::to_value(&report.errors)?;
+            sqlx::query!("UPDATE ingestion_runs SET finished_at=now(),status=$2,changed=$3,unchanged=$4,errors=$5 WHERE id=$1", id, report.status, report.changed, report.unchanged, errors).execute(pool).await?;
         }
+        Ok(report)
+    }.await;
+    if let Err(error) = &result {
+        guard
+            .fail(crate::diagnostics::cause(error.as_ref()))
+            .await?;
     }
-    if !report.errors.is_empty() {
-        report.status = if report.changed + report.unchanged == 0 {
-            "failed"
-        } else {
-            "partial"
-        };
-    }
-    if let Some(id) = run_id {
-        for failure in &report.errors {
-            crate::freshness::failure(pool, &failure.entity, info.id, failure.reason).await?;
-        }
-        let errors = serde_json::to_value(&report.errors)?;
-        sqlx::query!("UPDATE ingestion_runs SET finished_at=now(),status=$2,changed=$3,unchanged=$4,errors=$5 WHERE id=$1", id, report.status, report.changed, report.unchanged, errors).execute(pool).await?;
-    }
-    Ok(report)
+    guard.disarm();
+    result
 }
 
 async fn store(

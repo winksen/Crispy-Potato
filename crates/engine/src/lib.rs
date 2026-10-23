@@ -2,6 +2,7 @@
 
 pub mod content;
 pub mod db;
+pub mod diagnostics;
 pub mod freshness;
 mod hashing;
 pub mod http;
@@ -11,6 +12,7 @@ pub mod limits;
 pub mod links;
 pub mod observations;
 pub mod quality;
+mod run_guard;
 pub mod scaffold;
 pub mod schema;
 pub mod settings;

@@ -145,33 +145,28 @@ async fn main() -> ExitCode {
             }
         }
         Command::Status => {
-            let Ok(url) = std::env::var("DATABASE_URL") else {
-                eprintln!("DATABASE_URL is required");
-                return ExitCode::FAILURE;
-            };
-            let Ok(pool) = engine::db::connect(&url).await else {
-                eprintln!("Cannot connect to the database");
-                return ExitCode::FAILURE;
+            let pool = match database().await {
+                Ok(pool) => pool,
+                Err(code) => return code,
             };
             match engine::freshness::status(&pool).await {
                 Ok(value) => {
                     println!("{value:#}");
                     ExitCode::SUCCESS
                 }
-                Err(_) => {
-                    eprintln!("Cannot read collection status");
+                Err(error) => {
+                    eprintln!(
+                        "Cannot read collection status: {}",
+                        engine::diagnostics::cause(&error)
+                    );
                     ExitCode::FAILURE
                 }
             }
         }
         Command::Quarantine { action } => {
-            let Ok(url) = std::env::var("DATABASE_URL") else {
-                eprintln!("DATABASE_URL is required");
-                return ExitCode::FAILURE;
-            };
-            let Ok(pool) = engine::db::connect(&url).await else {
-                eprintln!("Cannot connect to the database");
-                return ExitCode::FAILURE;
+            let pool = match database().await {
+                Ok(pool) => pool,
+                Err(code) => return code,
             };
             let result = match action {
                 QuarantineAction::List => engine::quality::list(&pool)
@@ -184,8 +179,11 @@ async fn main() -> ExitCode {
             };
             match result {
                 Ok(()) => ExitCode::SUCCESS,
-                Err(_) => {
-                    eprintln!("Quarantine action failed; invalid ranges cannot be released");
+                Err(error) => {
+                    eprintln!(
+                        "Quarantine action failed; invalid ranges cannot be released: {}",
+                        engine::diagnostics::cause(error.as_ref())
+                    );
                     ExitCode::FAILURE
                 }
             }
@@ -195,17 +193,13 @@ async fn main() -> ExitCode {
             entity,
             dry_run,
         } => {
+            let pool = match database().await {
+                Ok(pool) => pool,
+                Err(code) => return code,
+            };
             let sources = engine::ingest::registered_sources();
             let Some(adapter) = sources.iter().find(|s| s.info().id == source) else {
                 eprintln!("Unknown source; concrete source adapters arrive in track F");
-                return ExitCode::FAILURE;
-            };
-            let Ok(url) = std::env::var("DATABASE_URL") else {
-                eprintln!("DATABASE_URL is required");
-                return ExitCode::FAILURE;
-            };
-            let Ok(pool) = engine::db::connect(&url).await else {
-                eprintln!("Cannot connect to the database");
                 return ExitCode::FAILURE;
             };
             match engine::ingest::run(&pool, adapter.as_ref(), entity.as_deref(), dry_run).await {
@@ -223,8 +217,11 @@ async fn main() -> ExitCode {
                         ExitCode::FAILURE
                     }
                 },
-                Err(_) => {
-                    eprintln!("Ingestion failed");
+                Err(error) => {
+                    eprintln!(
+                        "Ingestion failed: {}",
+                        engine::diagnostics::cause(error.as_ref())
+                    );
                     ExitCode::FAILURE
                 }
             }
@@ -233,13 +230,9 @@ async fn main() -> ExitCode {
             if validate(&content) != ExitCode::SUCCESS {
                 return ExitCode::FAILURE;
             }
-            let Ok(url) = std::env::var("DATABASE_URL") else {
-                eprintln!("DATABASE_URL is required");
-                return ExitCode::FAILURE;
-            };
-            let Ok(pool) = engine::db::connect(&url).await else {
-                eprintln!("Cannot connect to the database");
-                return ExitCode::FAILURE;
+            let pool = match database().await {
+                Ok(pool) => pool,
+                Err(code) => return code,
             };
             match engine::sync::sync(&pool, &content).await {
                 Ok(report) => {
@@ -255,30 +248,30 @@ async fn main() -> ExitCode {
                     );
                     ExitCode::SUCCESS
                 }
-                Err(_) => {
-                    eprintln!("Content sync failed; transaction rolled back");
+                Err(error) => {
+                    eprintln!(
+                        "Content sync failed; transaction rolled back: {}",
+                        engine::diagnostics::cause(error.as_ref())
+                    );
                     ExitCode::FAILURE
                 }
             }
         }
         Command::Migrate => {
-            let Ok(url) = std::env::var("DATABASE_URL") else {
-                eprintln!("DATABASE_URL is required");
-                return ExitCode::FAILURE;
+            let pool = match database().await {
+                Ok(pool) => pool,
+                Err(code) => return code,
             };
-            match engine::db::connect(&url).await {
-                Ok(pool) => match engine::db::migrate(&pool).await {
-                    Ok(()) => {
-                        println!("Migrations are up to date");
-                        ExitCode::SUCCESS
-                    }
-                    Err(_) => {
-                        eprintln!("Database migration failed");
-                        ExitCode::FAILURE
-                    }
-                },
-                Err(_) => {
-                    eprintln!("Cannot connect to the database");
+            match engine::db::migrate(&pool).await {
+                Ok(()) => {
+                    println!("Migrations are up to date");
+                    ExitCode::SUCCESS
+                }
+                Err(error) => {
+                    eprintln!(
+                        "Database migration failed: {}",
+                        engine::diagnostics::cause(&error)
+                    );
                     ExitCode::FAILURE
                 }
             }
@@ -400,4 +393,18 @@ fn plural(n: usize, noun: &str) -> String {
     } else {
         format!("{n} {noun}s")
     }
+}
+
+async fn database() -> Result<engine::db::PgPool, ExitCode> {
+    let url = std::env::var("DATABASE_URL").map_err(|_| {
+        eprintln!("DATABASE_URL is required");
+        ExitCode::FAILURE
+    })?;
+    engine::db::connect(&url).await.map_err(|error| {
+        eprintln!(
+            "Cannot connect to the database: {}",
+            engine::diagnostics::connection_cause(&error)
+        );
+        ExitCode::FAILURE
+    })
 }

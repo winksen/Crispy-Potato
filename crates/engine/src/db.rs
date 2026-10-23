@@ -1,7 +1,7 @@
 //! Bounded Postgres connections; migrations are run explicitly by the owner.
 use std::time::Duration;
 
-use sqlx::PgPool;
+pub use sqlx::PgPool;
 use sqlx::postgres::PgPoolOptions;
 
 pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
@@ -12,7 +12,7 @@ pub async fn connect_reader() -> Result<PgPool, String> {
         .map_err(|_| "API_DATABASE_URL is required".to_string())?;
     connect(&url)
         .await
-        .map_err(|_| "Cannot connect to the reader database".to_string())
+        .map_err(|error| crate::diagnostics::connection_cause(&error).to_string())
 }
 
 pub async fn connect(url: &str) -> Result<PgPool, sqlx::Error> {

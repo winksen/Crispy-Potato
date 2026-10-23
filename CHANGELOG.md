@@ -2,6 +2,26 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.37 (2026-10-22)
+
+Collection failures finalize their run records and database commands report safe error categories.
+
+### Fixed
+- **Run finalization.** One guard covers all exits after creating a run, including HTTP setup, freshness writes and final report serialization. Errors finish it as failed with a fixed reason; bounded retries reconnect after a lost connection. Cancelling a running future schedules an interrupted finalization without overwriting an already-finished run.
+- **CLI diagnostics.** All database commands share connection handling and report unreachable, authentication, permission, timeout, constraint and other fixed categories. Raw database messages, connection URLs, usernames and passwords are never printed. Ingest checks connectivity before selecting its adapter; unknown adapters still create no run. Content validation retains its detailed diagnostics.
+
+### Added
+- **Interrupted status.** Migration 0004 extends the run-status constraint for task cancellation and the future worker's restart recovery.
+
+### Checks and limitations
+- fmt, clippy, 82 Rust tests including Postgres, ten reporting tests, content validation, schemas and sqlx prepare --check pass. Tests terminate connections during both freshness attempt and failure writes, cancel a running task, verify permission/timeout/constraint categories, and check seven database commands with unreachable and wrong-password connections without exposing private values.
+
+### Not done
+- A database unavailable for all bounded finalization retries, an abruptly terminated process or a stopped runtime cannot persist its terminal status. Recovery of such abandoned records belongs to the worker in V0.1.82. Remote CI was not run because nothing is pushed.
+
+### Upgrading
+- Run `cli migrate` as the database owner to apply migration 0004 before collecting data.
+
 ## V0.1.36 (2026-10-22)
 
 Health checks separate collection secrets from issue-writing permissions and CI audits its workflows.

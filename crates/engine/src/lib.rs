@@ -3,6 +3,7 @@
 pub mod content;
 pub mod db;
 pub mod diagnostics;
+mod egress;
 pub mod freshness;
 mod hashing;
 pub mod http;
@@ -19,3 +20,13 @@ pub mod settings;
 pub mod sync;
 pub mod untrusted;
 pub mod verify_ids;
+
+#[cfg(test)]
+extern crate self as engine;
+
+#[cfg(test)]
+mod cache_tests;
+#[cfg(test)]
+mod http_tests;
+#[cfg(test)]
+mod link_tests;

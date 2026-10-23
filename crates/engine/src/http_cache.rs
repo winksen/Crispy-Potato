@@ -24,12 +24,8 @@ pub async fn get(
     url: &str,
     mut headers: HeaderMap,
 ) -> Result<Fetch, Error> {
-    let mut identity: Vec<_> = headers
-        .iter()
-        .map(|(k, v)| (k.as_str(), v.as_bytes()))
-        .collect();
-    identity.sort_unstable();
-    let key = sha256_hex(serde_json::to_vec(&(url, identity))?);
+    let key = cache_key(url, &headers)?;
+    prune(pool).await?;
     let previous = sqlx::query!(
         "SELECT etag,last_modified FROM http_cache WHERE cache_key=$1",
         key
@@ -75,6 +71,44 @@ pub async fn get(
     }
 }
 
+fn cache_key(url: &str, headers: &HeaderMap) -> Result<String, Error> {
+    let mut url = reqwest::Url::parse(url).map_err(|_| "Invalid cache URL")?;
+    url.set_fragment(None);
+    if url.host_str() == Some("api.stackexchange.com") {
+        let pairs: Vec<_> = url
+            .query_pairs()
+            .filter(|(key, _)| !matches!(key.as_ref(), "key" | "access_token"))
+            .map(|(key, value)| (key.into_owned(), value.into_owned()))
+            .collect();
+        url.set_query(None);
+        if !pairs.is_empty() {
+            url.query_pairs_mut().extend_pairs(pairs);
+        }
+    }
+    let mut identity: Vec<_> = headers
+        .iter()
+        .filter(|(name, value)| {
+            !value.is_sensitive()
+                && !matches!(
+                    name.as_str(),
+                    "authorization" | "proxy-authorization" | "cookie" | "x-api-key"
+                )
+        })
+        .map(|(k, v)| (k.as_str(), v.as_bytes()))
+        .collect();
+    identity.sort_unstable();
+    Ok(sha256_hex(serde_json::to_vec(&(url.as_str(), identity))?))
+}
+
+pub async fn prune(pool: &PgPool) -> Result<u64, sqlx::Error> {
+    Ok(
+        sqlx::query!("DELETE FROM http_cache WHERE checked_at < now() - interval '30 days'")
+            .execute(pool)
+            .await?
+            .rows_affected(),
+    )
+}
+
 pub async fn persist(
     tx: &mut Transaction<'_, Postgres>,
     update: &Update,
@@ -101,4 +135,37 @@ pub async fn record_unchanged(
     }
     persist(&mut tx, update).await?;
     tx.commit().await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn cache_identity_ignores_credentials_but_preserves_representation() {
+        let mut headers = HeaderMap::new();
+        headers.insert("authorization", HeaderValue::from_static("Bearer first"));
+        let first = cache_key("https://api.github.com/repos/example/repo", &headers).unwrap();
+        headers.insert("authorization", HeaderValue::from_static("Bearer second"));
+        assert_eq!(
+            first,
+            cache_key("https://api.github.com/repos/example/repo", &headers).unwrap()
+        );
+        headers.insert("accept", HeaderValue::from_static("application/json"));
+        assert_ne!(
+            first,
+            cache_key("https://api.github.com/repos/example/repo", &headers).unwrap()
+        );
+        assert_eq!(
+            cache_key(
+                "https://api.stackexchange.com/2.3/tags?site=stackoverflow&key=first",
+                &headers
+            )
+            .unwrap(),
+            cache_key(
+                "https://api.stackexchange.com/2.3/tags?site=stackoverflow&key=second",
+                &headers
+            )
+            .unwrap()
+        );
+    }
 }

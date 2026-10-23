@@ -30,12 +30,14 @@ async fn head_fallback_and_broken_links_report_file_and_field() {
         .respond_with(ResponseTemplate::new(404))
         .mount(&server)
         .await;
-    let report = links::check(
+    let report = links::check_with_client(
         vec![
             link(format!("{}/ok", server.uri())),
             link(format!("{}/broken", server.uri())),
         ],
         Duration::from_secs(10),
+        engine::http::Client::test_local(&server.uri(), Duration::from_secs(10), Duration::ZERO)
+            .unwrap(),
     )
     .await
     .unwrap();
@@ -47,7 +49,7 @@ async fn head_fallback_and_broken_links_report_file_and_field() {
 }
 
 #[tokio::test]
-async fn reports_cross_host_redirect_and_timeout() {
+async fn refuses_private_redirect_and_reports_timeout() {
     let server = MockServer::start().await;
     let target = MockServer::start().await;
     Mock::given(method("HEAD"))
@@ -61,20 +63,28 @@ async fn reports_cross_host_redirect_and_timeout() {
         )
         .mount(&server)
         .await;
-    let report = links::check(
+    let report = links::check_with_client(
         vec![link(format!("{}/redirect", server.uri()))],
         Duration::from_secs(10),
+        engine::http::Client::test_local(&server.uri(), Duration::from_secs(10), Duration::ZERO)
+            .unwrap(),
     )
     .await
     .unwrap();
-    assert!(report.problems[0].message.contains("another host"));
+    assert!(
+        report.problems[0]
+            .message
+            .contains("egress destination refused")
+    );
     Mock::given(path("/slow"))
         .respond_with(ResponseTemplate::new(200).set_delay(Duration::from_secs(2)))
         .mount(&server)
         .await;
-    let report = links::check(
+    let report = links::check_with_client(
         vec![link(format!("{}/slow", server.uri()))],
         Duration::from_millis(300),
+        engine::http::Client::test_local(&server.uri(), Duration::from_millis(300), Duration::ZERO)
+            .unwrap(),
     )
     .await
     .unwrap();

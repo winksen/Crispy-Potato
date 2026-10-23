@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.37` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.38` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -294,3 +294,11 @@ Checks: fmt, clippy, 76 Rust tests, ten reporting tests, validate and schema pas
 A shared guard marks failed runs on every error exit after insertion, reconnects for bounded finalization retries, and schedules an interrupted status on task cancellation. Migration 0004 permits interrupted runs. CLI database commands share connection handling and fixed error categories without printing URLs, credentials or raw server text. Tests terminate actual Postgres connections during freshness writes, abort a pending run, and check every database command against unreachable and wrong-password connections. Process-death and prolonged-outage recovery remains assigned to the worker.
 
 Checks: fmt, clippy, 82 Rust tests, ten reporting tests, validate, schema and sqlx prepare --check pass, including live connection-termination and CLI redaction regressions. Remote CI awaits a push.
+
+### V0.1.38 — Public outbound destinations and cache hygiene
+
+Source clients permit only quota-table HTTPS hosts; link clients permit public HTTP(S). A socket DNS resolver rejects non-public answers, including mixed answers, and every redirect repeats URL validation. Unit-test mocks alone may reach their exact loopback origin. Requests bypass automatic proxies and preserve fixed DNS, connection, TLS and protocol error classes.
+
+Stack Exchange backoff over 300 seconds fails fast without delaying other requests. Timeout retries release concurrency permits before waiting. Public cache identities exclude credentials, survive token rotation and expire after 30 unused days.
+
+Checks: fmt, clippy, 90 Rust tests, ten reporting tests, content validation, schemas, SQL metadata and cargo deny pass. Live checks pass for 16 links and five IDs; four credentialed IDs skip under D5. Remote CI awaits a push.

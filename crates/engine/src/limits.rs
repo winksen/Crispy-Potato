@@ -56,13 +56,14 @@ impl Host {
             tokio::time::sleep_until(due).await;
         }
     }
-    pub async fn defer(&self, delay: Duration) {
+    pub async fn defer(&self, delay: Duration) -> Result<(), crate::http::Error> {
+        if delay > Duration::from_secs(300) {
+            return Err(crate::http::Error::Deferred);
+        }
         let mut next = self.next.lock().await;
-        // A malformed unrepresentable duration blocks for a century, never retries early.
-        let due = Instant::now()
-            .checked_add(delay)
-            .unwrap_or_else(|| Instant::now() + Duration::from_secs(3_153_600_000));
+        let due = Instant::now() + delay;
         *next = (*next).max(due);
+        Ok(())
     }
 }
 
@@ -85,20 +86,32 @@ pub async fn host(name: &str) -> Arc<Host> {
         .clone()
 }
 
-pub async fn stackexchange_backoff(host: &Host, body: &[u8]) {
+pub async fn stackexchange_backoff(host: &Host, body: &[u8]) -> Result<(), crate::http::Error> {
     #[derive(serde::Deserialize)]
     struct Wrapper {
         #[serde(default)]
         backoff: u64,
     }
     if let Ok(wrapper) = serde_json::from_slice::<Wrapper>(body) {
-        host.defer(Duration::from_secs(wrapper.backoff)).await;
+        host.defer(Duration::from_secs(wrapper.backoff)).await?;
     }
+    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[tokio::test(start_paused = true)]
+    async fn huge_backoff_fails_without_blocking_the_host() {
+        let host = Host::new(Duration::from_secs(1), 1);
+        let start = Instant::now();
+        assert_eq!(
+            stackexchange_backoff(&host, br#"{"backoff":4000000000}"#).await,
+            Err(crate::http::Error::Deferred)
+        );
+        drop(host.acquire().await.unwrap());
+        assert_eq!(start.elapsed(), Duration::ZERO);
+    }
     #[tokio::test(start_paused = true)]
     async fn spaces_requests_and_honors_backoff() {
         let host = Host::new(Duration::from_secs(1), 2);
@@ -106,7 +119,9 @@ mod tests {
         drop(host.acquire().await.unwrap());
         drop(host.acquire().await.unwrap());
         assert_eq!(start.elapsed(), Duration::from_secs(1));
-        stackexchange_backoff(&host, br#"{"backoff":7}"#).await;
+        stackexchange_backoff(&host, br#"{"backoff":7}"#)
+            .await
+            .unwrap();
         drop(host.acquire().await.unwrap());
         assert_eq!(start.elapsed(), Duration::from_secs(8));
     }

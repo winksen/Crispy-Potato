@@ -12,7 +12,11 @@ pub const MAX_BODY: usize = 20 * 1024 * 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Error {
-    Transport,
+    Dns,
+    Connect,
+    Tls,
+    Protocol,
+    Blocked,
     Timeout,
     TooLarge,
     InvalidUrl,
@@ -21,7 +25,11 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
-            Self::Transport => "HTTP transport failed",
+            Self::Dns => "HTTP DNS resolution failed",
+            Self::Connect => "HTTP connection failed",
+            Self::Tls => "HTTP TLS verification failed",
+            Self::Protocol => "HTTP protocol failed",
+            Self::Blocked => "HTTP egress destination refused",
             Self::Timeout => "HTTP request timed out",
             Self::TooLarge => "HTTP response exceeds 20 MiB",
             Self::InvalidUrl => "Invalid HTTP URL",
@@ -42,6 +50,7 @@ pub struct Response {
 pub struct Client {
     inner: reqwest::Client,
     retry_base: Duration,
+    policy: crate::egress::Policy,
 }
 
 impl Client {
@@ -51,10 +60,45 @@ impl Client {
 
     /// Custom deadlines are used by bounded content checks and deterministic tests.
     pub fn with_timeout(timeout: Duration, retry_base: Duration) -> Result<Self, Error> {
+        Self::build(timeout, retry_base, crate::egress::Policy::Source)
+    }
+
+    pub fn for_links(timeout: Duration) -> Result<Self, Error> {
+        Self::build(
+            timeout,
+            Duration::from_millis(100),
+            crate::egress::Policy::Links,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn test_local(
+        origin: &str,
+        timeout: Duration,
+        retry_base: Duration,
+    ) -> Result<Self, Error> {
+        let origin = Url::parse(origin).map_err(|_| Error::InvalidUrl)?;
+        if !matches!(origin.host(), Some(url::Host::Ipv4(ip)) if ip.is_loopback()) {
+            return Err(Error::InvalidUrl);
+        }
+        Self::build(
+            timeout,
+            retry_base,
+            crate::egress::Policy::LocalTest(origin),
+        )
+    }
+
+    fn build(
+        timeout: Duration,
+        retry_base: Duration,
+        policy: crate::egress::Policy,
+    ) -> Result<Self, Error> {
         // Concurrent client constructors may race; a previously installed
         // provider is fine. The workspace enables only ring, never aws-lc.
         let _ = rustls::crypto::ring::default_provider().install_default();
         let inner = reqwest::Client::builder()
+            .no_proxy()
+            .dns_resolver(std::sync::Arc::new(crate::egress::PublicResolver))
             .connect_timeout(Duration::from_secs(5))
             .timeout(timeout)
             .gzip(true)
@@ -66,8 +110,12 @@ impl Client {
                 " (+https://github.com/winksen/Crispy-Potato)"
             ))
             .build()
-            .map_err(|_| Error::Transport)?;
-        Ok(Self { inner, retry_base })
+            .map_err(|error| classify(&error))?;
+        Ok(Self {
+            inner,
+            retry_base,
+            policy,
+        })
     }
 
     pub async fn get(&self, url: &str) -> Result<Response, Error> {
@@ -105,7 +153,7 @@ impl Client {
             }
             url = next;
         }
-        Err(Error::Transport)
+        Err(Error::Protocol)
     }
 
     async fn request_once(
@@ -115,16 +163,11 @@ impl Client {
         headers: HeaderMap,
     ) -> Result<Response, Error> {
         let url = Url::parse(url).map_err(|_| Error::InvalidUrl)?;
-        if !matches!(url.scheme(), "http" | "https")
-            || !url.username().is_empty()
-            || url.password().is_some()
-        {
-            return Err(Error::InvalidUrl);
-        }
+        self.policy.validate(&url)?;
         // Three attempts total, matching the release's acceptance criterion.
         for attempt in 0..3 {
             let host = crate::limits::host(url.host_str().ok_or(Error::InvalidUrl)?).await;
-            let permit = host.acquire().await.map_err(|_| Error::Transport)?;
+            let permit = host.acquire().await.map_err(|_| Error::Protocol)?;
             let result = self
                 .inner
                 .request(method.clone(), url.clone())
@@ -158,12 +201,13 @@ impl Client {
                                 timeout = true;
                                 break;
                             }
-                            Err(_) => return Err(Error::Transport),
+                            Err(error) => return Err(classify(&error)),
                         }
                     }
+                    drop(response);
                     if !timeout {
                         if url.host_str() == Some("api.stackexchange.com") {
-                            crate::limits::stackexchange_backoff(&host, &body).await;
+                            crate::limits::stackexchange_backoff(&host, &body).await?;
                         }
                         if (status == 429 || status >= 500) && attempt < 2 {
                             drop(permit);
@@ -180,21 +224,19 @@ impl Client {
                     if attempt == 2 {
                         return Err(Error::Timeout);
                     }
+                    drop(permit);
                     self.wait(attempt, &HeaderMap::new()).await?;
                 }
                 Err(error) if error.is_timeout() && attempt < 2 => {
+                    drop(permit);
                     self.wait(attempt, &HeaderMap::new()).await?
                 }
                 Err(error) => {
-                    return Err(if error.is_timeout() {
-                        Error::Timeout
-                    } else {
-                        Error::Transport
-                    });
+                    return Err(classify(&error));
                 }
             }
         }
-        Err(Error::Transport)
+        Err(Error::Protocol)
     }
 
     async fn wait(&self, attempt: u32, headers: &HeaderMap) -> Result<(), Error> {
@@ -228,4 +270,27 @@ fn retry_after(value: &str) -> Option<Duration> {
                 .ok()
                 .map(|time| time.duration_since(SystemTime::now()).unwrap_or_default())
         })
+}
+
+fn classify(error: &reqwest::Error) -> Error {
+    use std::error::Error as _;
+    let mut source = error.source();
+    while let Some(cause) = source {
+        if cause.is::<crate::egress::Denied>() {
+            return Error::Blocked;
+        }
+        if cause.is::<rustls::Error>() {
+            return Error::Tls;
+        }
+        source = cause.source();
+    }
+    if error.is_timeout() {
+        Error::Timeout
+    } else if error.is_dns() {
+        Error::Dns
+    } else if error.is_connect() {
+        Error::Connect
+    } else {
+        Error::Protocol
+    }
 }

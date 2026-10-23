@@ -389,7 +389,7 @@ mod tests {
             .mount(&server)
             .await;
         let error = fetch(
-            &Client::new().unwrap(),
+            &Client::test_local(&server.uri(), Duration::from_secs(30), Duration::ZERO).unwrap(),
             &Url::parse(&server.uri()).unwrap(),
             HeaderMap::new(),
         )

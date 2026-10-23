@@ -10,6 +10,17 @@ use wiremock::{
 };
 
 #[sqlx::test(migrations = "./migrations")]
+async fn unused_cache_rows_expire_after_thirty_days(pool: PgPool) -> Result<(), sqlx::Error> {
+    sqlx::query("INSERT INTO http_cache (cache_key,checked_at) VALUES ('old',now()-interval '31 days'),('recent',now()-interval '29 days')").execute(&pool).await?;
+    assert_eq!(http_cache::prune(&pool).await?, 1);
+    let remaining: String = sqlx::query_scalar("SELECT cache_key FROM http_cache")
+        .fetch_one(&pool)
+        .await?;
+    assert_eq!(remaining, "recent");
+    Ok(())
+}
+
+#[sqlx::test(migrations = "./migrations")]
 async fn conditional_request_preserves_observations_and_counts_unchanged(
     pool: PgPool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -23,7 +34,11 @@ async fn conditional_request_preserves_observations_and_counts_unchanged(
         )
         .mount(&server)
         .await;
-    let client = Client::new()?;
+    let client = Client::test_local(
+        &server.uri(),
+        std::time::Duration::from_secs(30),
+        std::time::Duration::ZERO,
+    )?;
     let Fetch::Changed(_, update) =
         http_cache::get(&client, &pool, &server.uri(), HeaderMap::new()).await?
     else {

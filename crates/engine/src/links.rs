@@ -88,7 +88,15 @@ fn walk(value: &Value, file: &str, field: &str, links: &mut Vec<Link>) {
 }
 
 pub async fn check(links: Vec<Link>, timeout: Duration) -> Result<Report, crate::ingest::Error> {
-    let client = Client::with_timeout(timeout, Duration::from_millis(100))?;
+    let client = Client::for_links(timeout)?;
+    check_with_client(links, timeout, client).await
+}
+
+pub(crate) async fn check_with_client(
+    links: Vec<Link>,
+    timeout: Duration,
+    client: Client,
+) -> Result<Report, crate::ingest::Error> {
     let slots = Arc::new(Semaphore::new(8));
     let mut tasks = JoinSet::new();
     let mut report = Report {

@@ -2,6 +2,27 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.38 (2026-10-22)
+
+Outbound requests enforce public destinations, bounded backoff and stable cache identities.
+
+### Security
+- **Egress policy.** Source clients allow only HTTPS on port 443 to quota-table hosts. Link clients allow public HTTP(S) destinations. Every request and redirect rejects private or reserved IP literals; a custom socket resolver refuses empty or mixed DNS answers containing non-public addresses. Loopback, link-local metadata, private, shared, multicast and reserved ranges are blocked for IPv4 and IPv6. Automatic proxies are disabled. Only a constructor compiled into unit tests permits one specified loopback mock origin.
+- **Transport diagnostics.** DNS, connection, TLS and protocol failures retain fixed error classes, never URLs or raw response text. The engine directly uses the workspace's existing url dependency for typed host validation.
+
+### Fixed
+- **Backoff.** Stack Exchange backoff above 300 seconds returns Deferred without poisoning the shared host bucket. Header and body timeout retries release their concurrency permit before sleeping.
+- **Cache lifecycle.** Authorization, cookies and sensitive headers, plus Stack Exchange credential query parameters, are excluded from public collection cache identities. Accepted validators survive credential rotation; rows last accepted more than 30 days ago are pruned before cache reads.
+
+### Checks and limitations
+- fmt, clippy, 90 Rust tests, ten reporting tests, content validation, schemas, SQL metadata and cargo deny pass. Live checks pass for 16 links and five IDs; four credentialed IDs skip under D5.
+
+### Not done
+- Remote CI was not run because nothing is pushed. The conservative address policy also refuses documentation and transition ranges; private-network collection and proxy routing are unsupported.
+
+### Upgrading
+- Deploy with direct public network access and working public DNS. No database migration is needed. Existing credential-dependent validator keys get one cold fetch and expire after 30 days; subsequent credential rotations preserve their replacement keys.
+
 ## V0.1.37 (2026-10-22)
 
 Collection failures finalize their run records and database commands report safe error categories.

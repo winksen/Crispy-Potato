@@ -1,7 +1,7 @@
 [alias]
-validate = "run --quiet -p cli -- validate"
-schema = "run --quiet -p cli -- schema"
-new-entity = "run --quiet -p cli -- new"
+validate = "run --quiet -p cp-cli -- validate"
+schema = "run --quiet -p cp-cli -- schema"
+new-entity = "run --quiet -p cp-cli -- new"
 
 [env]
 # Build from committed query metadata without a running database.

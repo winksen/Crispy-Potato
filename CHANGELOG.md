@@ -2,6 +2,27 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.34 (2026-10-22)
+
+Dependency advisories are fixed and checked daily between pushes.
+
+### Security
+- **TLS dependencies.** Updated rustls-webpki to 0.103.16 and webpki-roots to 1.0.10, fixing RUSTSEC-2026-0382 and RUSTSEC-2026-0381, along with 18 other semver-compatible lockfile updates. The license policy is unchanged.
+- **Daily checks.** The CI dependency job also runs daily on main. A separate job with only issue-write permission maintains one marked bot issue, closes it on recovery and reopens it on regression; it checks out no code and runs no dependency build scripts.
+
+### Changed
+- **Package names.** Cargo packages are now `cp-model`, `cp-engine` and `cp-cli`, avoiding the unrelated crates.io `model` advisory. Rust library names remain `model` and `engine`, and the executable remains `cli`. Cargo aliases, workflow commands and contributor instructions use the new names.
+- **Audit plan.** Preserved the existing 2026-10-21 audit and its revised release numbering as the plan for the remaining work.
+
+### Checks and limitations
+- cargo fmt, clippy, 75 Rust tests (including Postgres), content validation, schema checks, aliases, cli version and five mocked daily-issue tests pass. cargo deny passes; OSV-Scanner reports only RUSTSEC-2023-0071 for the inactive `rsa` lockfile entry, with no path in `cargo tree -i rsa --all-features`. Tests used one compiler job after Windows paging-file exhaustion in the initial parallel build.
+
+### Not done
+- The scheduled workflow has not run on GitHub because nothing is pushed. Its issue transitions are tested locally without writing to GitHub.
+
+### Upgrading
+- Use `cargo run -p cp-cli -- <command>` for explicit package selection. Existing `cargo validate`, `cargo schema`, `cargo new-entity` and the `cli` executable keep their names.
+
 ## V0.1.33 (2026-10-17)
 
 External identifiers can be verified before publishing content.
@@ -226,7 +247,7 @@ A contributing guide, a pull request template and two issue forms, so contributo
 ### Added
 - **[CONTRIBUTING.md](CONTRIBUTING.md)**: the tools and commands; adding an entity step by step from `cargo new-entity`; editing one (ids never change, numbers are reported rather than written, wrong collected facts go under `overrides`); the sourcing rules (a source for anything a reader could dispute, which sources to prefer and avoid, facts read against Wikidata and the project's site, no collected numbers, neutral tone with the marketing words to leave out, your own words, no unreviewed AI text, stable links); the fit-rating rubric with an example of each rating from Rust and React; the writing style for each field; the review checklist; and how to contribute code.
 - **A pull request template** with the kind of change, the main checklist items and a place for sources and AI use.
-- **Two issue forms**: *Request an entity* (name, kind, website, why it belongs, a check against `planned.yaml`) and *Report a data problem* (entity, page, kind of problem, what is wrong, the correction with its source). The report's `entity` and `page` fields can be filled from the address (`?template=report-data-problem.yml&entity=rust&page=…`), which the website's "Report a data problem" link will use (V0.1.117). A config file adds a link to private security reporting next to them.
+- **Two issue forms**: *Request an entity* (name, kind, website, why it belongs, a check against `planned.yaml`) and *Report a data problem* (entity, page, kind of problem, what is wrong, the correction with its source). The report's `entity` and `page` fields can be filled from the address (`?template=report-data-problem.yml&entity=rust&page=…`), which the website's "Report a data problem" link will use (V0.1.131). A config file adds a link to private security reporting next to them.
 - **Links to the guide** from the README, the data model's `fit` section, `CLAUDE.md`, and the template `cli new` writes, whose fit comment now points at the rubric.
 
 ### Not done
@@ -253,7 +274,7 @@ A contributing guide, a pull request template and two issue forms, so contributo
 Entities name their logo by its Simple Icons slug, so the web app can show it without the repository storing any SVG.
 
 ### Added
-- **`ids.simple_icons`**, the slug of the entity's logo in [Simple Icons](https://simpleicons.org), whose icons are CC0. The web app will import the icon from the simple-icons package (V0.1.102), so no SVG is stored here and there is none to sanitize. The slug is validated like the other ids: lowercase letters and digits with single underscores between words, the format all 3,466 slugs Simple Icons lists follow. It only names a logo, so an entity still needs another id to collect data with.
+- **`ids.simple_icons`**, the slug of the entity's logo in [Simple Icons](https://simpleicons.org), whose icons are CC0. The web app will import the icon from the simple-icons package (V0.1.116), so no SVG is stored here and there is none to sanitize. The slug is validated like the other ids: lowercase letters and digits with single underscores between words, the format all 3,466 slugs Simple Icons lists follow. It only names a logo, so an entity still needs another id to collect data with.
 - **Rust and React have one**: `rust` and `react`, both in Simple Icons' slug list.
 - **The data model and the JSON Schemas** describe the field.
 - **Tests**: real slugs and malformed ones in the id table, a malformed slug through the validator, and an entity whose only id is its logo.
@@ -278,7 +299,7 @@ Entities name their logo by its Simple Icons slug, so the web app can show it wi
 - **Tests**: `for_year` before, at and after each listed year; one name, a map, and the range's first and last years parse; 2010, next year, an empty map and a malformed name are each reported once.
 
 ### Not done
-- **The CSV headers themselves were not read.** React's and Rust's names were checked against the survey's published result pages for 2022 to 2025 (2023 to 2025 are the years decision D8 imports); the import in V0.1.70 lists any name that matches no column.
+- **The CSV headers themselves were not read.** React's and Rust's names were checked against the survey's published result pages for 2022 to 2025 (2023 to 2025 are the years decision D8 imports); the import in V0.1.80 lists any name that matches no column.
 
 ### Upgrading
 - Nothing to do: a single name still works. Code reading `ExternalIds::so_survey` gets a `SurveyName` instead of a `String`, and `ExternalIds::iter` no longer lists it.

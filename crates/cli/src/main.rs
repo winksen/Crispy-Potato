@@ -8,7 +8,11 @@ use engine::{scaffold, schema};
 use model::Kind;
 
 #[derive(Parser)]
-#[command(version, about = "Tools for the catalog's content and data")]
+#[command(
+    name = "cli",
+    version,
+    about = "Tools for the catalog's content and data"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

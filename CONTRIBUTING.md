@@ -15,8 +15,8 @@ You can also help by [reporting a data problem](https://github.com/winksen/Crisp
 | `cargo new-entity <kind> <id>` | Starts an entity file from a template and takes its id off `planned.yaml` |
 | `cargo validate` | Checks every content file and lists every problem with its file and field |
 | `cargo schema` | Regenerates the editor schemas after a model type or a vocabulary changes |
-| `cargo run -p cli -- check-links` | Checks live URLs and reports broken links and host changes |
-| `cargo run -p cli -- verify-ids` | Checks source ids; missing GitHub/Stack Exchange credentials are reported as skipped |
+| `cargo run -p cp-cli -- check-links` | Checks live URLs and reports broken links and host changes |
+| `cargo run -p cp-cli -- verify-ids` | Checks source ids; missing GitHub/Stack Exchange credentials are reported as skipped |
 | `cargo test` | Runs the tests, including the content checks |
 
 ## Adding an entity

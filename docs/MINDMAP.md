@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.33` (2026-10-17). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.34` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -27,9 +27,9 @@ mindmap
       Vocabularies for domains and traits
       Code samples
     Crates
-      model: the data types
-      engine: validation, Postgres sync and collection framework
-      cli: content checks, migrations, sync, ingestion and status
+      cp-model: the data types
+      cp-engine: validation, Postgres sync and collection framework
+      cp-cli: content checks, migrations, sync, ingestion and status
     Validation
       Schema and unknown fields
       15 external id formats
@@ -54,7 +54,7 @@ mindmap
       Contributing guide and templates
       LF line endings everywhere
     Security
-      Threat model with 24 threats
+      Threat model with 28 threats
       Untrusted content limits
       Reader and writer database roles
       Redacted environment or file-backed secrets
@@ -65,7 +65,7 @@ mindmap
       No unsafe, no unwrap outside tests
       CI on every push and pull request
       Weekly links and external ID health report
-      cargo deny and Dependabot
+      Daily cargo deny and dependency issue, plus Dependabot
     Not built yet
       Source adapters
       HTTP API
@@ -106,9 +106,9 @@ flowchart LR
 
 | Crate | Holds |
 |---|---|
-| `model` | `Entity<T>` with `LanguageTraits`, `FrameworkTraits` and `RuntimeTraits`; links, external ids (`ExternalIds::iter`, and `SurveyName` with `for_year` since V0.1.14), domain fit, points, relations, milestones, learning, notable users, overrides; the vocabularies and `Planned`; `PartialDate` (a year, a month or a day) and `current_year()` |
-| `engine` | `db`, `sync`, `http`, `http_cache`, `limits`, `ingest`, `untrusted`, `quality`, `freshness` and `settings` provide storage and collection; `links` and `verify_ids` check live content references; `content::load`: walks `content/` refusing links and oversized files, scans each YAML file against the parser budget, parses it with unknown fields refused, runs the checks in `content/check.rs` and returns either the content or every problem found as `Diagnostic { file, message }` |
-| `cli` | `cli validate [--content <dir>]`, run as `cargo validate`; `cli schema [--content <dir>] [--out <dir>] [--check]`, run as `cargo schema`; `cli new <kind> <id> [--content <dir>]`, run as `cargo new-entity` (since V0.1.16; the three aliases are in `.cargo/config.toml`); `cli --version`; storage/collection commands shown above; `cli check-links` and `cli verify-ids` (both accept `--content`) |
+| `cp-model` (library `model`) | `Entity<T>` with `LanguageTraits`, `FrameworkTraits` and `RuntimeTraits`; links, external ids (`ExternalIds::iter`, and `SurveyName` with `for_year` since V0.1.14), domain fit, points, relations, milestones, learning, notable users, overrides; the vocabularies and `Planned`; `PartialDate` (a year, a month or a day) and `current_year()` |
+| `cp-engine` (library `engine`) | `db`, `sync`, `http`, `http_cache`, `limits`, `ingest`, `untrusted`, `quality`, `freshness` and `settings` provide storage and collection; `links` and `verify_ids` check live content references; `content::load`: walks `content/` refusing links and oversized files, scans each YAML file against the parser budget, parses it with unknown fields refused, runs the checks in `content/check.rs` and returns either the content or every problem found as `Diagnostic { file, message }` |
+| `cp-cli` (binary `cli`) | `cli validate [--content <dir>]`, run as `cargo validate`; `cli schema [--content <dir>] [--out <dir>] [--check]`, run as `cargo schema`; `cli new <kind> <id> [--content <dir>]`, run as `cargo new-entity` (since V0.1.16; the three aliases are in `.cargo/config.toml`); `cli --version`; storage/collection commands shown above; `cli check-links` and `cli verify-ids` (both accept `--content`) |
 
 **New entities** (since V0.1.16): `engine::scaffold::new_entity` refuses an invalid id (`content::id_problem`), an existing file and an id planned as another kind, writes the template from `scaffold::template` and takes the id off `planned.yaml` line by line, keeping its comments.
 
@@ -145,7 +145,8 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 
 ## 6. Security
 
-- **[The threat model](security/threat-model.md)** (since V0.1.8) names five assets (data integrity, availability, secrets, visitors' browsers, the code that ships) and five trust boundaries (contributor pull requests, external sources, the public API and website, the operator, third-party code). Each of its 24 threats has a mitigation, the release that delivers it and a status; every 🔒 row of the release index maps to at least one threat. Shipped so far: http-only URLs and sample paths kept inside `samples/` (V0.1.1), CI that untrusted pull requests cannot use to reach secrets (V0.1.4), the cargo deny and pinned-action checks (V0.1.5), the limits on loading untrusted content (V0.1.10), and id formats that can't break URLs or paths (V0.1.11).
+- **[The threat model](security/threat-model.md)** (since V0.1.8) names five assets (data integrity, availability, secrets, visitors' browsers, the code that ships) and five trust boundaries (contributor pull requests, external sources, the public API and website, the operator, third-party code). Each of its 28 threats (four added by the 2026-10-21 audit) has a mitigation, the release that delivers it and a status; every 🔒 row of the release index maps to at least one threat. Shipped so far: http-only URLs and sample paths kept inside `samples/` (V0.1.1), CI that untrusted pull requests cannot use to reach secrets (V0.1.4), the cargo deny and pinned-action checks (V0.1.5), the limits on loading untrusted content (V0.1.10), and id formats that can't break URLs or paths (V0.1.11).
+- **[The 2026-10-21 audit](security/audit-2026-10-21.md)** of the repository at V0.1.33: 27 findings in shipped code (no high; medium ones are the two dependency advisories, runs left `running`, redirects to internal addresses, unchecked characters in content, unbounded observation dates and the oversized npm document for Next.js) and 9 gaps in the planned API and website, each assigned to a planned row (track D2, V0.1.34–V0.1.43, and new rows in tracks H and N).
 - **[SECURITY.md](../SECURITY.md)** (since V0.1.8): vulnerabilities are reported privately through GitHub's private vulnerability reporting, which the owner turns on in the repository settings.
 
 ## 7. Quality
@@ -157,7 +158,7 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 | Tests | `cargo test` | 75 pass, including migration, observation upsert and transactional sync tests; requires the local Postgres owner URL |
 | Schemas | `cargo schema --check` | up to date (since V0.1.12) |
 | Content | `cargo validate` | passes: 1 language, 1 framework, 0 runtimes, 48 planned |
-| Dependencies | `cargo deny check` | passes: advisories, bans, licenses and sources (since V0.1.5) |
+| Dependencies | `cargo deny check` | advisories, bans, licenses and sources pass; V0.1.34 updates the TLS dependencies and checks daily |
 | CI | `.github/workflows/ci.yml` | since V0.1.4, on pushes to `main` and pull requests: format, lints, validate, schemas, tests, and cargo deny; not yet run on GitHub |
 
 **CI** (since V0.1.4) runs one job on `ubuntu-latest`: format, lints, validate, the schema check (since V0.1.12), then tests. Validation comes before the tests so a broken content file fails at that step. Content pull requests are untrusted: the workflow runs on `pull_request` only, never `pull_request_target`, with a read-only token that is not kept in the checkout, and third-party actions are pinned by commit SHA. A second job (since V0.1.5) runs `cargo deny check`.
@@ -269,3 +270,9 @@ Checks: cargo fmt, clippy, test (71 tests), validate and schema --check pass; wi
 **ID checks.** cli verify-ids verifies repositories, all package registries, Wikidata software classes, Stack Overflow tags and endoflife.date products; archived or renamed repositories and missing ids report file and provider, and missing credentials are explicit skips in the shared weekly health report
 
 Checks: cargo fmt, clippy, test (75 tests), validate and schema --check pass; five live Rust/React ids pass, four credential-dependent checks skip per D5, and a deliberately missing npm package reports ids.npm with exit 1; remote weekly execution was not run because nothing is pushed
+
+### V0.1.34 — Dependency advisories and daily checks
+
+TLS fixes and semver-compatible lockfile updates pass cargo deny. Packages are cp-model, cp-engine and cp-cli; Rust library names and the cli executable stay unchanged. A daily dependency job reports to one marked bot issue through a separate issue-only job with no checkout. OSV reports only the inactive sqlx MySQL rsa entry, documented in the audit. The existing audit and revised release plan are preserved.
+
+Checks: fmt, clippy, 75 Rust tests including Postgres, validate, schema, aliases, cli version, cargo deny and five issue tests pass; OSV reports only inactive rsa. GitHub execution awaits a push.

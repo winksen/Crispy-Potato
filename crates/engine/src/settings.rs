@@ -6,7 +6,7 @@ use reqwest::{
 use secrecy::{ExposeSecret, SecretString};
 use std::{fmt, fs::File, io::Read};
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Settings {
     pub github_token: Option<SecretString>,
     pub stackexchange_key: Option<SecretString>,

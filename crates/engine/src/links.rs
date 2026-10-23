@@ -3,7 +3,7 @@ use crate::{content, http::Client};
 use reqwest::{Method, Url, header::HeaderMap};
 use serde::Serialize;
 use serde_json::Value;
-use std::{path::Path, sync::Arc, time::Duration};
+use std::{collections::BTreeMap, path::Path, sync::Arc, time::Duration};
 use tokio::{sync::Semaphore, task::JoinSet};
 
 #[derive(Clone)]
@@ -103,26 +103,33 @@ pub(crate) async fn check_with_client(
         checked: links.len(),
         ..Report::default()
     };
+    let mut unique: BTreeMap<String, Vec<Link>> = BTreeMap::new();
     for link in links {
+        unique.entry(link.url.clone()).or_default().push(link);
+    }
+    for (url, fields) in unique {
         let permit = slots.clone().acquire_owned().await?;
         let client = client.clone();
         tasks.spawn(async move {
             let _permit = permit;
-            let message = match tokio::time::timeout(timeout, check_one(&client, &link.url)).await {
+            let message = match tokio::time::timeout(timeout, check_one(&client, &url)).await {
                 Ok(message) => message,
                 Err(_) => Some("timeout after link-check deadline".into()),
             };
-            message.map(|message| Problem {
-                file: link.file,
-                field: link.field,
-                message,
-            })
+            fields
+                .into_iter()
+                .filter_map(|link| {
+                    message.as_ref().map(|message| Problem {
+                        file: link.file,
+                        field: link.field,
+                        message: message.clone(),
+                    })
+                })
+                .collect::<Vec<_>>()
         });
     }
     while let Some(result) = tasks.join_next().await {
-        if let Some(problem) = result? {
-            report.problems.push(problem);
-        }
+        report.problems.extend(result?);
     }
     report
         .problems

@@ -2,6 +2,26 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.43 (2026-10-22)
+
+Live content checks use smaller npm responses and share repeated URL work.
+
+### Fixed
+- **npm verification.** Fetch the latest version document instead of the full package history, including scoped packages.
+
+### Changed
+- **Concurrency.** Verify eight identifiers concurrently within the shared host limits; retain deterministic field diagnostics and credential skips.
+- **Repeated links.** Check each distinct URL once and report its result for every referencing field.
+
+### Checks
+- fmt, clippy, 108 Rust tests, ten reporting tests, content validation and schemas pass. The explicit live npm test passes for next, react-native and @angular/core. Existing content passes five ID checks and 16 link-field checks; the duplicate-URL regression preserves both field diagnostics.
+
+### Not done
+- Four GitHub/Stack Exchange IDs skip because credentials are absent (D5). Remote CI was not run; no dependency or SQL change requires a new audit or metadata generation.
+
+### Upgrading
+- Nothing to do.
+
 ## V0.1.42 (2026-10-22)
 
 Database readers have explicit column grants and bounded sessions, and application SQL is checked by clippy.

@@ -11,8 +11,11 @@ use serde_json::Value;
 use std::{
     collections::{BTreeSet, VecDeque},
     path::Path,
+    sync::Arc,
     time::Duration,
 };
+
+use tokio::{sync::Semaphore, task::JoinSet};
 
 const DEADLINE: Duration = Duration::from_secs(30);
 // Programming languages are included explicitly: Wikidata does not classify the
@@ -28,6 +31,8 @@ pub async fn check(root: &Path, settings: &Settings) -> Result<Report, crate::in
     })?;
     let client = Client::new()?;
     let mut report = Report::default();
+    let slots = Arc::new(Semaphore::new(8));
+    let mut tasks = JoinSet::new();
     for entity in content.entities {
         for (provider, id) in entity.ids.iter().filter(|(p, _)| *p != "simple_icons") {
             let file = format!("{}/{}.yaml", entity.kind.dir(), entity.id);
@@ -48,17 +53,32 @@ pub async fn check(root: &Path, settings: &Settings) -> Result<Report, crate::in
                 continue;
             }
             report.checked += 1;
-            let result =
-                tokio::time::timeout(DEADLINE, verify(&client, settings, provider, id)).await;
-            let error = match result {
-                Ok(result) => result.err(),
-                Err(_) => Some("verification deadline exceeded".into()),
-            };
-            if let Some(message) = error {
-                report.problems.push(problem(file, provider, message));
-            }
+            let permit = slots.clone().acquire_owned().await?;
+            let client = client.clone();
+            let settings = settings.clone();
+            let provider = provider.to_owned();
+            let id = id.to_owned();
+            tasks.spawn(async move {
+                let _permit = permit;
+                let result =
+                    tokio::time::timeout(DEADLINE, verify(&client, &settings, &provider, &id))
+                        .await;
+                let error = match result {
+                    Ok(result) => result.err(),
+                    Err(_) => Some("verification deadline exceeded".into()),
+                };
+                error.map(|message| problem(file, &provider, message))
+            });
         }
     }
+    while let Some(result) = tasks.join_next().await {
+        if let Some(problem) = result? {
+            report.problems.push(problem);
+        }
+    }
+    report
+        .problems
+        .sort_by(|a, b| (&a.file, &a.field).cmp(&(&b.file, &b.field)));
     Ok(report)
 }
 
@@ -80,7 +100,10 @@ fn endpoint(provider: &str, id: &str) -> Result<Url, String> {
             ]
             .concat(),
         ),
-        "npm" => ("https://registry.npmjs.org/", vec![id.into()]),
+        "npm" => (
+            "https://registry.npmjs.org/",
+            vec![id.into(), "latest".into()],
+        ),
         "pypi" => (
             "https://pypi.org/",
             vec!["pypi".into(), id.into(), "json".into()],
@@ -304,6 +327,26 @@ mod tests {
     use super::*;
     use serde_json::json;
     use wiremock::{Mock, MockServer, ResponseTemplate, matchers::method};
+
+    #[test]
+    fn npm_uses_latest_document_for_plain_and_scoped_names() {
+        for name in ["next", "react-native", "@angular/core"] {
+            let url = endpoint("npm", name).unwrap();
+            assert!(url.path().ends_with("/latest"));
+            assert_eq!(url.path_segments().unwrap().count(), 2);
+        }
+    }
+
+    #[tokio::test]
+    #[ignore = "requires live npm registry"]
+    async fn live_npm_large_packages() {
+        let client = Client::new().unwrap();
+        for name in ["next", "react-native", "@angular/core"] {
+            verify(&client, &Settings::default(), "npm", name)
+                .await
+                .unwrap();
+        }
+    }
 
     #[test]
     fn repository_rename_archive_and_malformed_responses() {

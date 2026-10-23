@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.42` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.43` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -326,3 +326,9 @@ Checks: fmt, clippy, 104 Rust tests, ten reporting tests, content, schemas, SQL 
 Reader access names public columns explicitly, excludes private collection diagnostics and grants nothing on future tables. Both roles have connection, lock and idle-transaction limits; readers default to read-only with a five-second statement deadline. Validated pool settings control connection count, acquire timeout and statement timeout, and pools identify their application. Clippy forbids unchecked SQL constructors outside tests.
 
 Checks: fmt, clippy, 106 Rust tests, ten reporting tests, content, schemas, SQL metadata and workflow audit pass. Independent privilege checks and reader statement cancellation pass; the negative SQL fixture proves Clippy rejects formatted SQL even with SQLx's safety wrapper. Remote CI and live providers were not run.
+
+### V0.1.43 -- Smaller and shared live content checks
+
+npm verification uses the latest-version endpoint, including scoped packages. Up to eight identifiers are verified concurrently through the shared host limits. Link checking groups identical URLs and retains every referencing file/field diagnostic.
+
+Checks: fmt, clippy, 108 Rust tests, ten reporting tests, content and schemas pass. The live npm test passes for next, react-native and @angular/core; existing content passes five IDs and 16 link fields. Four credentialed IDs skip under D5; remote CI was not run.

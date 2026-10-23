@@ -13,6 +13,33 @@ fn link(url: String) -> Link {
 }
 
 #[tokio::test]
+async fn duplicate_url_is_fetched_once_and_reported_for_each_field() {
+    let server = MockServer::start().await;
+    for verb in ["HEAD", "GET"] {
+        Mock::given(method(verb))
+            .respond_with(ResponseTemplate::new(404))
+            .expect(1)
+            .mount(&server)
+            .await;
+    }
+    let first = link(server.uri());
+    let mut second = first.clone();
+    second.field = "links.docs".into();
+    let report = links::check_with_client(
+        vec![first, second],
+        Duration::from_secs(10),
+        engine::http::Client::test_local(&server.uri(), Duration::from_secs(10), Duration::ZERO)
+            .unwrap(),
+    )
+    .await
+    .unwrap();
+    assert_eq!(report.checked, 2);
+    assert_eq!(report.problems.len(), 2);
+    assert_eq!(report.problems[0].field, "links.docs");
+    assert_eq!(report.problems[1].field, "links.website");
+}
+
+#[tokio::test]
 async fn head_fallback_and_broken_links_report_file_and_field() {
     let server = MockServer::start().await;
     Mock::given(method("HEAD"))

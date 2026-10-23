@@ -63,7 +63,7 @@ jobs:
         run: cargo fmt --all --check
 
       - name: Install SQLx tooling
-        run: cargo install sqlx-cli --version 0.8.6 --locked --no-default-features --features rustls,postgres
+        run: cargo install sqlx-cli --version 0.9.0 --no-default-features --features rustls,postgres
 
       - name: Check SQL metadata
         run: |

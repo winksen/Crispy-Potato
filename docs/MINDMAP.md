@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.34` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.35` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -114,7 +114,7 @@ flowchart LR
 
 **Schemas** (since V0.1.12): `engine::schema` generates a draft-07 JSON Schema per kind from the model types (which derive `JsonSchema`), fixes `kind` to the folder's kind and turns each vocabulary into an enum with descriptions; `content::load_vocab` reads only the vocabularies for it. `cargo schema --check` fails when the committed files are stale.
 
-Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `serde_json`, `sqlx`, `tokio`, `sha2`, `reqwest`, `httpdate`, `secrecy` and `tempfile`; `wiremock` in tests. Storage and collection modules are described in the release sections below.
+Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `serde_json`, `sqlx`, `tokio`, `sha2`, `reqwest`, `rustls`, `httpdate`, `secrecy` and `tempfile`; `wiremock` in tests. Storage and collection modules are described in the release sections below.
 
 ## 4. Validation rules
 
@@ -276,3 +276,9 @@ Checks: cargo fmt, clippy, test (75 tests), validate and schema --check pass; fi
 TLS fixes and semver-compatible lockfile updates pass cargo deny. Packages are cp-model, cp-engine and cp-cli; Rust library names and the cli executable stay unchanged. A daily dependency job reports to one marked bot issue through a separate issue-only job with no checkout. OSV reports only the inactive sqlx MySQL rsa entry, documented in the audit. The existing audit and revised release plan are preserved.
 
 Checks: fmt, clippy, 75 Rust tests including Postgres, validate, schema, aliases, cli version, cargo deny and five issue tests pass; OSV reports only inactive rsa. GitHub execution awaits a push.
+
+### V0.1.35 — Database, HTTP and hashing major updates
+
+SQLx and its CLI use 0.9.0 with regenerated offline metadata. Reqwest 0.13.5 uses the system certificate verifier and an explicit ring provider, preserving HTTP/2 and decompression with aws-lc disabled. SHA-256 content and cache identities use sha2 0.11.1. The license policy is unchanged; cargo deny and the whole-lockfile OSV scan pass, and the old inactive rsa entry is gone.
+
+Checks: fmt, clippy, 76 Rust tests, five report tests, validate, schema, sqlx prepare --check and cargo deny pass. OSV is clean; five live IDs pass and four skip under D5. Remote CI awaits a push.

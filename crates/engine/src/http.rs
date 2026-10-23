@@ -51,6 +51,9 @@ impl Client {
 
     /// Custom deadlines are used by bounded content checks and deterministic tests.
     pub fn with_timeout(timeout: Duration, retry_base: Duration) -> Result<Self, Error> {
+        // Concurrent client constructors may race; a previously installed
+        // provider is fine. The workspace enables only ring, never aws-lc.
+        let _ = rustls::crypto::ring::default_provider().install_default();
         let inner = reqwest::Client::builder()
             .connect_timeout(Duration::from_secs(5))
             .timeout(timeout)

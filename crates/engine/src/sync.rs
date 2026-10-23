@@ -1,6 +1,6 @@
 //! Validate first, then replace the curated snapshot in one transaction.
 use crate::content;
-use sha2::{Digest, Sha256};
+use crate::hashing::sha256_hex;
 use sqlx::PgPool;
 use std::{collections::BTreeMap, fs, io::Read, path::Path};
 
@@ -75,7 +75,7 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
             .collect::<Vec<_>>()
             .join("\n")
     })?;
-    let version = format!("{:x}", Sha256::digest(serde_json::to_vec(&snapshot)?));
+    let version = sha256_hex(serde_json::to_vec(&snapshot)?);
     let mut tx = pool.begin().await?;
     sqlx::query!("SELECT pg_advisory_xact_lock(1129337689)::text")
         .fetch_one(&mut *tx)
@@ -118,7 +118,7 @@ pub async fn sync(pool: &PgPool, root: &Path) -> Result<Report, Error> {
     let mut changed = 0;
     for entity in &content.entities {
         let document = serde_json::to_value(entity)?;
-        let hash = format!("{:x}", Sha256::digest(serde_json::to_vec(&document)?));
+        let hash = sha256_hex(serde_json::to_vec(&document)?);
         changed += sqlx::query!("INSERT INTO entities (id,kind,name,document,content_hash) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (id) DO UPDATE SET kind=EXCLUDED.kind,name=EXCLUDED.name,document=EXCLUDED.document,content_hash=EXCLUDED.content_hash,retired=false WHERE entities.content_hash <> EXCLUDED.content_hash OR entities.retired" ,&entity.id, entity.kind.to_string(), &entity.name, &document, &hash).execute(&mut *tx).await?.rows_affected();
         for alias in &entity.aliases {
             sqlx::query!(

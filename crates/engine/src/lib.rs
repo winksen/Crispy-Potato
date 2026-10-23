@@ -3,6 +3,7 @@
 pub mod content;
 pub mod db;
 pub mod freshness;
+mod hashing;
 pub mod http;
 pub mod http_cache;
 pub mod ingest;

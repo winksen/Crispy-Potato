@@ -67,7 +67,7 @@ The engine pool allows five connections, waits at most five seconds to acquire o
 
 ## Checked queries (V0.1.22)
 
-All application SQL uses sqlx macros; test fixtures use runtime queries. Install `cargo install sqlx-cli --version 0.8.6 --locked --no-default-features --features rustls,postgres`, set the local owner `DATABASE_URL`, then run:
+All application SQL uses sqlx macros; test fixtures use runtime queries. Install `cargo install sqlx-cli --version 0.9.0 --no-default-features --features rustls,postgres`, set the local owner `DATABASE_URL`, then run:
 
 ```powershell
 cargo sqlx migrate run --source crates/engine/migrations
@@ -107,12 +107,18 @@ Stack Exchange's typed `backoff` value delays the entire host (stricter than its
 
 Since V0.1.25 `http_cache::get` sends stored ETag and Last-Modified validators and returns `Changed` or `Unchanged`. A caller must persist the returned cache update in the same transaction as accepted data; malformed or rolled-back imports therefore cannot poison the cache. `record_unchanged` commits a 304's validators and run counter without touching observations. Cache keys hash the URL and request headers, keeping credential-bearing URLs out of storage. No new settings.
 
-`engine::http::Client` uses reqwest 0.12 with rustls only, gzip and brotli decoding, a five-second connect timeout and a 30-second deadline per attempt (including body reads). Responses are limited to 20 MiB after decoding, both by declared length when available and while streaming. The User-Agent includes the crate version and repository URL.
+`engine::http::Client` uses reqwest 0.13 with rustls/ring and the platform certificate verifier, gzip and brotli decoding, a five-second connect timeout and a 30-second deadline per attempt (including body reads). Responses are limited to 20 MiB after decoding, both by declared length when available and while streaming. The User-Agent includes the crate version and repository URL.
 
-There are three attempts total (the roadmap's “giving up after 3 tries” criterion), with exponential backoff starting at 500 ms plus jitter for 429, 5xx and timeouts. `Retry-After` seconds and HTTP dates are honored; delays over five minutes return a deferred error instead of retrying early. Other transport errors are not retried. Errors contain neither URLs nor response bodies. No new environment settings. Dependencies: reqwest 0.12, httpdate 1 and wiremock 0.6 for tests.
+There are three attempts total (the roadmap's “giving up after 3 tries” criterion), with exponential backoff starting at 500 ms plus jitter for 429, 5xx and timeouts. `Retry-After` seconds and HTTP dates are honored; delays over five minutes return a deferred error instead of retrying early. Other transport errors are not retried. Errors contain neither URLs nor response bodies. No new environment settings. Dependencies: reqwest 0.13, rustls 0.23 (ring), httpdate 1 and wiremock 0.6 for tests.
 
 ## Database roles (V0.1.23)
 
 After owner migrations, run `Get-Content scripts/db/roles.sql -Raw | docker compose exec -T db psql -U cp_owner -d crispy_potato -v ON_ERROR_STOP=1`. This idempotent script provisions `cp_reader` (SELECT) and `cp_writer` (SELECT/INSERT/UPDATE/DELETE and sequences), denies schema creation and temporary tables, and protects migration history. Run it in every database as the same owner that runs migrations so default privileges apply to future tables.
 
 In the owner's interactive psql shell, use `\password cp_reader` and `\password cp_writer`. Set `DATABASE_URL` to the writer for sync/collection; `API_DATABASE_URL` to the reader for API access. Keep owner credentials only for migrations and isolated tests. Roles are cluster-wide and must not own objects or inherit other roles. The integration test switches dedicated connections into each role, checks reader SELECT and writer INSERT, and verifies permission-denied errors for reader writes, writer DDL and migration-history changes.
+
+## Major dependency updates (V0.1.35)
+
+The workspace uses sqlx 0.9.0 (minimum Rust 1.94), reqwest 0.13.5 and sha2 0.11.1. sqlx-cli installation follows upstream guidance and omits --locked to avoid relying on its published snapshot of yanked dependencies; application builds remain locked. HTTPS uses the operating system trust store through rustls-platform-verifier, with ring installed before constructing clients. Linux runtime images need ca-certificates. No aws-lc dependency or new license allowance is needed.
+
+On memory-constrained Windows systems, set CARGO_BUILD_JOBS=1 and CARGO_PROFILE_DEV_DEBUG=0 in the shell before checks to reduce compiler memory and debug artifact size. The same settings work with tests and sqlx prepare.

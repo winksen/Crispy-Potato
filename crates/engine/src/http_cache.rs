@@ -1,10 +1,10 @@
 //! Validators are committed only after the caller accepts the corresponding data.
+use crate::hashing::sha256_hex;
 use crate::http::{Client, Response};
 use reqwest::{
     Method,
     header::{ETAG, HeaderMap, HeaderValue, IF_MODIFIED_SINCE, IF_NONE_MATCH, LAST_MODIFIED},
 };
-use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Transaction};
 
 pub struct Update {
@@ -29,10 +29,7 @@ pub async fn get(
         .map(|(k, v)| (k.as_str(), v.as_bytes()))
         .collect();
     identity.sort_unstable();
-    let key = format!(
-        "{:x}",
-        Sha256::digest(serde_json::to_vec(&(url, identity))?)
-    );
+    let key = sha256_hex(serde_json::to_vec(&(url, identity))?);
     let previous = sqlx::query!(
         "SELECT etag,last_modified FROM http_cache WHERE cache_key=$1",
         key

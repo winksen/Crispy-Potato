@@ -2,6 +2,24 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.35 (2026-10-22)
+
+Database, HTTP and hashing dependencies move to their next major versions.
+
+### Changed
+- **sqlx 0.9.0.** Updated Postgres, migrations, query macros and sqlx-cli together; offline query metadata is regenerated against the local database. sqlx-cli installation follows upstream guidance and omits `--locked` to avoid its published snapshot of yanked dependencies; application builds still use the committed workspace lockfile.
+- **reqwest 0.13.5.** Uses `rustls-no-provider` and an explicit rustls 0.23 ring provider, preserving HTTP/2, gzip and brotli support. HTTPS verification uses the platform's certificate roots. The aws-lc provider is disabled and the license allow-list is unchanged.
+- **sha2 0.11.1.** Updated SHA-256 hashing used for content and HTTP validator identities. The new digest array no longer implements LowerHex, so a shared encoder preserves the previous 64-character lowercase format, checked against known empty-string and abc vectors.
+
+### Checks and limitations
+- fmt, clippy, 76 Rust tests including Postgres, five report tests, validate, schema and sqlx prepare --check pass. cargo deny passes with the license list unchanged and OSV reports no advisories. Five live Rust/React IDs pass through the platform TLS verifier; four credential-dependent checks skip per D5.
+
+### Not done
+- Remote CI has not run because nothing is pushed. Credential-dependent live checks remain subject to D5.
+
+### Upgrading
+- Install sqlx-cli 0.9.0 with `cargo install sqlx-cli --version 0.9.0 --no-default-features --features rustls,postgres`. Use Rust 1.94 or newer. HTTPS now requires a working system trust store; Linux runtime images must include ca-certificates. No database migration is added.
+
 ## V0.1.34 (2026-10-22)
 
 Dependency advisories are fixed and checked daily between pushes.

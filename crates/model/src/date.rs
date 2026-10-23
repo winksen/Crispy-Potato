@@ -91,15 +91,20 @@ fn days_in_month(year: u16, month: u16) -> u16 {
 
 /// The current year in UTC, from the system clock.
 pub fn current_year() -> u16 {
+    current_date().year
+}
+
+/// Today's full calendar date in UTC.
+pub fn current_date() -> PartialDate {
     let seconds = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |since| since.as_secs());
-    year_of_day(seconds / 86_400)
+    date_of_day(seconds / 86_400)
 }
 
-/// The year of a day counted from 1970-01-01, using Howard Hinnant's
+/// The date of a day counted from 1970-01-01, using Howard Hinnant's
 /// `civil_from_days`.
-fn year_of_day(day: u64) -> u16 {
+fn date_of_day(day: u64) -> PartialDate {
     let z = day + 719_468;
     let era = z / 146_097;
     let day_of_era = z % 146_097;
@@ -109,7 +114,42 @@ fn year_of_day(day: u64) -> u16 {
     // Months counted from March, so January and February belong to the next year.
     let march_based_month = (5 * day_of_year + 2) / 153;
     let year = year_of_era + era * 400 + u64::from(march_based_month >= 10);
-    u16::try_from(year).unwrap_or(u16::MAX)
+    let day = day_of_year - (153 * march_based_month + 2) / 5 + 1;
+    let month = if march_based_month < 10 {
+        march_based_month + 3
+    } else {
+        march_based_month - 9
+    };
+    PartialDate {
+        year: u16::try_from(year).unwrap_or(u16::MAX),
+        month: Some(month as u8),
+        day: Some(day as u8),
+    }
+}
+
+impl PartialDate {
+    /// A full date's next day, including month/year and leap-day transitions.
+    pub fn next_day(self) -> Option<Self> {
+        let (month, day) = (self.month?, self.day?);
+        if u16::from(day) < days_in_month(self.year, u16::from(month)) {
+            Some(Self {
+                day: Some(day + 1),
+                ..self
+            })
+        } else if month < 12 {
+            Some(Self {
+                month: Some(month + 1),
+                day: Some(1),
+                ..self
+            })
+        } else {
+            Some(Self {
+                year: self.year.checked_add(1)?,
+                month: Some(1),
+                day: Some(1),
+            })
+        }
+    }
 }
 
 impl fmt::Display for PartialDate {
@@ -197,9 +237,30 @@ mod tests {
             (20_088, 2024),
             (20_743, 2026),
         ] {
-            assert_eq!(year_of_day(day), year, "day {day}");
+            assert_eq!(date_of_day(day).year, year, "day {day}");
         }
         assert!(current_year() >= 2026);
+    }
+
+    #[test]
+    fn utc_calendar_and_next_day_cover_boundaries() {
+        assert_eq!(date_of_day(0).to_string(), "1970-01-01");
+        assert_eq!(date_of_day(11_016).to_string(), "2000-02-29");
+        for (date, next) in [
+            ("2024-02-28", "2024-02-29"),
+            ("2024-02-29", "2024-03-01"),
+            ("2025-02-28", "2025-03-01"),
+            ("2026-12-31", "2027-01-01"),
+        ] {
+            assert_eq!(
+                date.parse::<PartialDate>()
+                    .unwrap()
+                    .next_day()
+                    .unwrap()
+                    .to_string(),
+                next
+            );
+        }
     }
 
     #[test]

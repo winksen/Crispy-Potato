@@ -6,6 +6,39 @@ use sqlx::PgPool;
 use std::path::Path;
 
 struct Fake;
+
+struct RepeatedHold;
+impl Source for RepeatedHold {
+    fn info(&self) -> SourceInfo {
+        Fake.info()
+    }
+    fn applies(&self, entity: &model::Entity) -> bool {
+        entity.id == "rust"
+    }
+    fn fetch<'a>(&'a self, context: &'a Context<'a>, entity: &'a model::Entity) -> FetchFuture<'a> {
+        Box::pin(async move {
+            let mut batch = Fake.fetch(context, entity).await?;
+            batch.observations[0].value = 1e15;
+            Ok(batch)
+        })
+    }
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn two_runs_update_the_same_held_measurement(pool: PgPool) -> Result<(), ingest::Error> {
+    engine::sync::sync(
+        &pool,
+        &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content"),
+    )
+    .await?;
+    for _ in 0..2 {
+        let report = ingest::run(&pool, &RepeatedHold, None, false).await?;
+        assert_eq!(report.held.len(), 1);
+    }
+    let counts: (i64, i64, i64) = sqlx::query_as("SELECT (SELECT count(*) FROM observations),(SELECT count(*) FROM observations_quarantine),(SELECT count(*) FROM ingestion_runs)").fetch_one(&pool).await?;
+    assert_eq!(counts, (0, 1, 2));
+    Ok(())
+}
 impl Source for Fake {
     fn info(&self) -> SourceInfo {
         SourceInfo {

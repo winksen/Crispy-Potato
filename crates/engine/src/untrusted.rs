@@ -31,13 +31,40 @@ fn date(value: &str) -> bool {
     value.len() == 10 && value.parse::<model::PartialDate>().is_ok()
 }
 
+pub(crate) fn observation_date(value: &str) -> bool {
+    let today = model::current_date();
+    observation_date_at(value, today.next_day().unwrap_or(today))
+}
+
+fn observation_date_at(value: &str, tomorrow: model::PartialDate) -> bool {
+    date(value)
+        && value >= "2008-01-01"
+        && value
+            .parse::<model::PartialDate>()
+            .is_ok_and(|date| date <= tomorrow)
+}
+
+fn release_date(value: &str, latest_year: u16) -> bool {
+    date(value)
+        && value
+            .parse::<model::PartialDate>()
+            .is_ok_and(|date| (1940..=latest_year).contains(&date.year))
+}
+
+fn stored_text(value: &str) -> Result<String, &'static str> {
+    if value.chars().count() > 256 {
+        return Err("source string exceeds 256 characters");
+    }
+    Ok(text(value))
+}
+
 fn json(value: &mut Value, depth: usize, budget: &mut usize) -> Result<(), &'static str> {
     if depth > 16 || *budget == 0 {
         return Err("fact exceeds structural limits");
     }
     *budget -= 1;
     match value {
-        Value::String(s) => *s = text(s),
+        Value::String(s) => *s = stored_text(s)?,
         Value::Number(n) if n.as_f64().is_none_or(|v| !v.is_finite() || v < 0.0) => {
             return Err("invalid fact number");
         }
@@ -76,10 +103,11 @@ pub fn clean(batch: &mut Batch) -> Result<(), &'static str> {
         }
     }
     for release in &mut batch.releases {
-        release.version = text(&release.version);
+        release.version = stored_text(&release.version)?;
         if release.version.is_empty()
-            || release.released_at.as_ref().is_some_and(|v| !date(v))
-            || release.eol_at.as_ref().is_some_and(|v| !date(v))
+            || release.released_at.as_ref().is_some_and(|v| !release_date(v, model::current_year().saturating_add(1)))
+            // Announced end-of-support dates legitimately extend beyond next year.
+            || release.eol_at.as_ref().is_some_and(|v| !release_date(v, 9999))
         {
             return Err("invalid release fields");
         }
@@ -97,6 +125,52 @@ pub fn clean(batch: &mut Batch) -> Result<(), &'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn observation_dates_use_exact_utc_day_bounds() {
+        let tomorrow = "2027-01-01".parse().unwrap();
+        for date in ["2008-01-01", "2026-12-31", "2027-01-01"] {
+            assert!(observation_date_at(date, tomorrow));
+        }
+        for date in ["2007-12-31", "2027-01-02", "2024-02-30", "2026"] {
+            assert!(!observation_date_at(date, tomorrow));
+        }
+    }
+
+    #[test]
+    fn release_dates_and_storage_strings_are_refused_without_truncation() {
+        let mut batch = Batch {
+            releases: vec![crate::ingest::Release {
+                version: "é".repeat(256),
+                released_at: Some("1940-01-01".into()),
+                eol_at: Some("2050-12-31".into()),
+                lts: false,
+            }],
+            ..Batch::default()
+        };
+        assert!(clean(&mut batch).is_ok());
+        for date in [
+            "1939-12-31".into(),
+            format!("{}-01-01", model::current_year() + 2),
+        ] {
+            batch.releases[0].released_at = Some(date);
+            assert!(clean(&mut batch).is_err());
+        }
+        batch.releases[0].released_at = Some(format!("{}-12-31", model::current_year() + 1));
+        assert!(clean(&mut batch).is_ok());
+        let long = format!("{}a", "é".repeat(256));
+        batch.releases[0].version = long.clone();
+        assert!(clean(&mut batch).is_err());
+        assert_eq!(batch.releases[0].version, long);
+        batch.releases.clear();
+        batch.facts.push(crate::ingest::Fact {
+            field: "developer".into(),
+            value: serde_json::json!({"names": ["é".repeat(256)]}),
+        });
+        assert!(clean(&mut batch).is_ok());
+        batch.facts[0].value = serde_json::json!({"names": [long]});
+        assert!(clean(&mut batch).is_err());
+        assert_eq!(batch.facts[0].value["names"][0], long);
+    }
     #[test]
     fn hostile_text_is_bounded_plain_text() {
         let value = format!("<script>\u{202e}\n{}", "é".repeat(100_000));

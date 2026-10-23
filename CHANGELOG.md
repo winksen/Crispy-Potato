@@ -2,6 +2,24 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.40 (2026-10-22)
+
+Collected values are bounded before serving and quarantine records retain one review entry per measurement.
+
+### Fixed
+- **Baseline bounds.** Observation dates must be from 2008-01-01 through tomorrow in UTC and counts below 10^15. Quality checks quarantine out-of-range values even without a previous baseline; manual release cannot bypass these bounds. Database constraints enforce them on direct writes too.
+- **Stored strings and dates.** Versions and nested fact strings above 256 Unicode characters are refused before sanitization, never truncated into colliding identities. Release dates range from 1940 through next year; end-of-life dates may extend farther into the future for announced support cycles.
+- **Quarantine identity.** Migration 0005 preserves old invalid observations in quarantine and removes them as baselines, merges existing duplicate holds, and adds a unique measurement index. Repeated holds update the candidate, reason and held time. Listing sorts newest first and accepts entity/source filters plus bounded, one-based paging.
+
+### Checks
+- fmt, clippy, 103 Rust tests, ten reporting tests, content, schemas and SQL metadata pass. Tests cover date/count/string boundaries, two runs sharing one held record, filtered paging and migration of old invalid baselines and duplicate holds.
+
+### Not done
+- Remote CI is not run because nothing is pushed. Live source checks were not repeated for this storage-only change.
+
+### Upgrading
+- Run cli migrate as the database owner before deploying the updated CLI. Review migrated out-of-range values with cli quarantine list; corrected data must be collected again. Existing duplicate holds keep their newest entry.
+
 ## V0.1.39 (2026-10-22)
 
 Curated and collected text share a character policy and every curated string has a length limit.

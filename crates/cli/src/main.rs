@@ -84,9 +84,22 @@ enum Command {
 
 #[derive(Subcommand)]
 enum QuarantineAction {
-    List,
-    Release { id: i64 },
-    Discard { id: i64 },
+    List {
+        #[arg(long)]
+        entity: Option<String>,
+        #[arg(long)]
+        source: Option<String>,
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
+        page: u32,
+        #[arg(long, default_value_t = 100, value_parser = clap::value_parser!(u32).range(1..=100))]
+        page_size: u32,
+    },
+    Release {
+        id: i64,
+    },
+    Discard {
+        id: i64,
+    },
 }
 
 #[tokio::main]
@@ -169,9 +182,20 @@ async fn main() -> ExitCode {
                 Err(code) => return code,
             };
             let result = match action {
-                QuarantineAction::List => engine::quality::list(&pool)
-                    .await
-                    .map(|value| println!("{value:#}")),
+                QuarantineAction::List {
+                    entity,
+                    source,
+                    page,
+                    page_size,
+                } => engine::quality::list_filtered(
+                    &pool,
+                    entity.as_deref(),
+                    source.as_deref(),
+                    page,
+                    page_size,
+                )
+                .await
+                .map(|value| println!("{value:#}")),
                 QuarantineAction::Release { id } => engine::quality::resolve(&pool, id, true).await,
                 QuarantineAction::Discard { id } => {
                     engine::quality::resolve(&pool, id, false).await
@@ -407,4 +431,36 @@ async fn database() -> Result<engine::db::PgPool, ExitCode> {
         );
         ExitCode::FAILURE
     })
+}
+
+#[cfg(test)]
+mod quarantine_options_tests {
+    use super::*;
+    #[test]
+    fn parses_filters_and_rejects_invalid_pages() {
+        let cli = Cli::try_parse_from([
+            "cli",
+            "quarantine",
+            "list",
+            "--entity",
+            "rust",
+            "--source",
+            "github",
+            "--page",
+            "2",
+            "--page-size",
+            "20",
+        ])
+        .unwrap();
+        assert!(
+            matches!(cli.command, Command::Quarantine { action: QuarantineAction::List { entity: Some(entity), source: Some(source), page: 2, page_size: 20 } } if entity == "rust" && source == "github")
+        );
+        for (option, value) in [
+            ("--page", "0"),
+            ("--page-size", "0"),
+            ("--page-size", "101"),
+        ] {
+            assert!(Cli::try_parse_from(["cli", "quarantine", "list", option, value]).is_err());
+        }
+    }
 }

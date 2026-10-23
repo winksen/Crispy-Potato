@@ -278,14 +278,14 @@ Migrations live in `crates/engine/migrations/`; `cli migrate` applies them as th
 | `meta` | Text key/value metadata, including content version |
 | `sources` | Id, name, URL, license, attribution and positive schedule in seconds |
 | `observations` | Entity, metric, period, date and source form the unique key; upsert replaces value and unit; time-range index on entity, metric, date |
-| `observations_quarantine` | Identity id, entity, source, candidate JSONB, reason and held timestamp |
+| `observations_quarantine` | Identity id, entity, source, candidate JSONB, reason and held timestamp; since migration 0005, unique by entity/source/metric/period/date, with repeated holds updating the existing entry |
 | `releases` | Entity, version and source key; release and end-of-life dates, LTS flag |
 | `facts` | Entity, field and source key; JSONB value and collection timestamp |
 | `ingestion_runs` | Identity id, source, start/end, status, changed/unchanged counts and JSONB errors; statuses are running, success, partial, failed, skipped and (migration 0004) interrupted |
 | `http_cache` | Opaque cache key, ETag, Last-Modified and last checked timestamp |
 | `source_entity_state` | Since V0.1.30: entity/source key, last attempt, last success and last fixed error category; success is independent of a later failed attempt |
 
-Collected rows reference entities without cascading deletion, preserving history when entities retire. Observation values must be finite, nonnegative and at most 100 for percentages. Dates use Postgres `date`; run and collection times use `timestamptz`.
+Collected rows reference entities without cascading deletion, preserving history when entities retire. Observation values must be finite, nonnegative, below 10^15 for counts and at most 100 for percentages. Observation dates range from 2008-01-01 through tomorrow UTC; invalid first values are quarantined before becoming baselines, and manual approval cannot override range bounds. Migration 0005 moves old out-of-range observations to quarantine before enforcing database constraints. Dates use Postgres `date`; run and collection times use `timestamptz`.
 
 ### Observations
 
@@ -313,6 +313,11 @@ Metric names are namespaced by source:
 ### Releases
 
 `entity_id`, `version`, `released_at`, `eol_at`, `lts`, `source_id`. The sources are GitHub releases and endoflife.date.
+
+Release dates must be full dates from 1940 through next year. End-of-life dates may
+extend farther into the future (through 9999) for announced support cycles. Release
+versions and every nested fact string are limited to 256 Unicode characters before
+sanitization; overlong strings reject the entity batch instead of being truncated.
 
 ### Sources and provenance
 

@@ -13,11 +13,17 @@ pub struct Held {
 }
 
 pub fn reason(o: &Observation, previous: Option<f64>) -> Option<&'static str> {
+    if !crate::untrusted::observation_date(&o.observed_at) {
+        return Some("observation date is outside 2008 through tomorrow UTC");
+    }
     if !o.value.is_finite() {
         return Some("non-finite value");
     }
     if o.value < 0.0 {
         return Some("negative count or percentage");
+    }
+    if o.unit == "count" && o.value >= 1e15 {
+        return Some("count must be below 10^15");
     }
     if o.unit == "pct" && o.value > 100.0 {
         return Some("percentage exceeds 100");
@@ -46,7 +52,11 @@ async fn previous(
 
 pub async fn inspect(pool: &PgPool, o: &Observation) -> Result<Option<Held>, Error> {
     let mut tx = pool.begin().await?;
-    let last = previous(&mut tx, o).await?;
+    let last = if reason(o, None).is_some() {
+        None
+    } else {
+        previous(&mut tx, o).await?
+    };
     tx.rollback().await?;
     Ok(reason(o, last).map(|reason| Held {
         observation: o.clone(),
@@ -65,10 +75,14 @@ pub async fn store(
     )
     .fetch_one(&mut **tx)
     .await?;
-    let last = previous(tx, o).await?;
+    let last = if reason(o, None).is_some() {
+        None
+    } else {
+        previous(tx, o).await?
+    };
     if let Some(reason) = reason(o, last) {
         let document = serde_json::to_value(o)?;
-        sqlx::query!("INSERT INTO observations_quarantine (entity_id,source_id,document,reason) VALUES ($1,$2,$3,$4)", o.entity_id, o.source_id, document, reason).execute(&mut **tx).await?;
+        sqlx::query!("INSERT INTO observations_quarantine (entity_id,source_id,document,reason) VALUES ($1,$2,$3,$4) ON CONFLICT (entity_id,source_id,(document->>'metric'),(document->>'period'),(document->>'observed_at')) DO UPDATE SET document=EXCLUDED.document,reason=EXCLUDED.reason,held_at=now()", o.entity_id, o.source_id, document, reason).execute(&mut **tx).await?;
         Ok(Some(Held {
             observation: o.clone(),
             reason: reason.into(),
@@ -80,7 +94,22 @@ pub async fn store(
 }
 
 pub async fn list(pool: &PgPool) -> Result<serde_json::Value, Error> {
-    let rows = sqlx::query!("SELECT id,entity_id,source_id,document,reason,held_at::text AS held_at FROM observations_quarantine ORDER BY id LIMIT 100").fetch_all(pool).await?;
+    list_filtered(pool, None, None, 1, 100).await
+}
+
+/// One-based pages, bounded to 100 rows, newest holds first with stable ties.
+pub async fn list_filtered(
+    pool: &PgPool,
+    entity: Option<&str>,
+    source: Option<&str>,
+    page: u32,
+    page_size: u32,
+) -> Result<serde_json::Value, Error> {
+    if page == 0 || !(1..=100).contains(&page_size) {
+        return Err("page must be positive and page size between 1 and 100".into());
+    }
+    let offset = i64::from(page - 1) * i64::from(page_size);
+    let rows = sqlx::query!("SELECT id,entity_id,source_id,document,reason,held_at::text AS held_at FROM observations_quarantine WHERE ($1::text IS NULL OR entity_id=$1) AND ($2::text IS NULL OR source_id=$2) ORDER BY held_at DESC,id DESC LIMIT $3 OFFSET $4", entity, source, i64::from(page_size), offset).fetch_all(pool).await?;
     Ok(serde_json::Value::Array(rows.into_iter().map(|r| serde_json::json!({"id":r.id,"entity":r.entity_id,"source":r.source_id,"observation":r.document,"reason":r.reason,"held_at":r.held_at})).collect()))
 }
 
@@ -96,7 +125,7 @@ pub async fn resolve(pool: &PgPool, id: i64, release: bool) -> Result<(), Error>
         let observation: Observation = serde_json::from_value(row.document)?;
         // Manual approval may override trend rules, never invalid ranges.
         if reason(&observation, None).is_some() {
-            return Err("Invalid numeric range cannot be released".into());
+            return Err("Invalid numeric or date range cannot be released".into());
         }
         observations::upsert(&mut tx, &observation).await?;
     }
@@ -145,5 +174,25 @@ mod tests {
     fn first_value_and_zero_baseline_are_valid() {
         assert!(reason(&observation(1.0, "count"), None).is_none());
         assert!(reason(&observation(1.0, "count"), Some(0.0)).is_none());
+    }
+
+    #[test]
+    fn first_counts_and_dates_cannot_poison_a_baseline() {
+        assert!(reason(&observation(1e15 - 1.0, "count"), None).is_none());
+        for value in [1e15, f64::MAX] {
+            assert!(reason(&observation(value, "count"), None).is_some());
+        }
+        let mut o = observation(1.0, "count");
+        for date in ["2007-12-31", "9999-12-31", "0000-01-01", "2026-02-30"] {
+            o.observed_at = date.into();
+            assert!(reason(&o, None).is_some(), "{date}");
+        }
+        for date in [
+            "2008-01-01".into(),
+            model::current_date().next_day().unwrap().to_string(),
+        ] {
+            o.observed_at = date;
+            assert!(reason(&o, None).is_none());
+        }
     }
 }

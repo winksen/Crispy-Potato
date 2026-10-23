@@ -2,6 +2,22 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.45 (2026-10-22)
+
+The JVM and .NET complete the five runtime entries in the catalog.
+
+### Added
+- **Managed runtimes.** Sourced language/target traits, domain fits, trade-offs and selection guidance. JVM distributions are described within one entry, with Temurin explicitly identified as the support-cycle source. Modern .NET is distinguished from .NET Framework. Planned runtime IDs are now empty.
+
+### Checks
+- fmt, clippy, 108 Rust tests, ten reporting tests, content validation and schemas pass. All 15 uncredentialed catalog IDs verify. The 20 link fields in the two new entries pass an isolated live check after transient timeouts. Official documentation and Wikidata were read for both entries.
+
+### Not done
+- Thirteen credentialed IDs skip under D5. Full-catalog link runs had intermittent timeouts at different documentation hosts; the new entries pass separately. Remote CI was not run. No new dependencies or SQL changes.
+
+### Upgrading
+- Run cli sync to import the new runtime content.
+
 ## V0.1.44 (2026-10-22)
 
 The catalog includes Node.js, Deno and Bun with distinct runtime trade-offs.

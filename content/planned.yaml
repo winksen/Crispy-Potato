@@ -52,6 +52,4 @@ frameworks:
   - dotnet-maui
   - kotlin-multiplatform
 
-runtimes:
-  - jvm
-  - dotnet
+runtimes: []

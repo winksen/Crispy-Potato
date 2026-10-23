@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=../../schemas/runtime.schema.json
+id: jvm
+kind: runtime
+name: Java Virtual Machine
+aliases: [java vm, javavm]
+tagline: Execute Java, Kotlin and Scala bytecode on a shared runtime.
+summary: >
+  The JVM executes class files produced by Java and other JVM-language compilers,
+  including Kotlin and Scala. It is specified independently of any one operating
+  system or implementation. Common JDK distributions include Oracle JDK,
+  Eclipse Temurin and Amazon Corretto; the endoflife.date ID here tracks Temurin,
+  not a universal support deadline for every JVM distribution.
+links:
+  website: https://openjdk.org/
+  docs: https://docs.oracle.com/javase/specs/jvms/se25/html/index.html
+ids:
+  wikidata: Q193321
+  stackoverflow_tag: jvm
+  endoflife: eclipse-temurin
+traits:
+  languages: [java, kotlin, scala]
+  targets: [linux, macos, windows]
+domains:
+  - domain: web-backend
+    fit: good
+    note: JVM distributions support server deployments, with framework choice and garbage-collector tuning handled separately.
+  - domain: cli
+    fit: good
+    note: Suitable for tools sharing JVM libraries; distribute a compatible runtime or require one to be installed.
+strengths:
+  - title: Shared execution format
+    detail: A specified class-file format supports languages beyond Java without tying the abstract machine to a single hardware platform.
+    sources: [https://docs.oracle.com/javase/specs/jvms/se25/html/jvms-1.html, https://kotlinlang.org/docs/jvm-get-started.html, https://docs.scala-lang.org/overviews/jdk-compatibility/overview.html]
+  - title: Choice of distributions
+    detail: Temurin and Corretto provide OpenJDK builds, while Oracle distributes its own JDK; deployments can choose a vendor and support policy.
+    sources: [https://adoptium.net/temurin/, https://docs.aws.amazon.com/corretto/latest/corretto-25-ug/what-is-corretto-25.html, https://www.oracle.com/java/technologies/downloads/]
+weaknesses:
+  - title: Memory and pause-time trade-offs
+    detail: HotSpot offers different garbage collectors; strict latency or throughput goals may require collector selection and heap tuning.
+    sources: [https://docs.oracle.com/en/java/javase/25/gctuning/introduction-garbage-collection-tuning.html]
+  - title: Toolchain compatibility needs coordination
+    detail: A language compiler and its build tools must support the chosen JDK; moving the runtime alone can expose compatibility limits.
+    sources: [https://docs.scala-lang.org/overviews/jdk-compatibility/overview.html]
+choose_when:
+  - you need Java, Kotlin or Scala libraries to run together on a shared managed runtime
+  - you want a choice of JDK vendors and can maintain a compatible compiler, build-tool and runtime combination
+relations:
+  alternatives: [dotnet]
+learning:
+  curve: moderate
+  resources:
+    - title: Java Virtual Machine specification
+      url: https://docs.oracle.com/javase/specs/jvms/se25/html/index.html
+      kind: docs
+      free: true

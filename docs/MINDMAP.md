@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.44` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.45` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -340,3 +340,9 @@ Three runtime entries cover JavaScript and TypeScript, desktop/server operating 
 Source review used official runtime documentation and Wikidata. Live checks pass for 11 IDs and all 40 link fields; ten credentialed IDs skip under D5. Node.js 22, 24 and 26 release and EOL dates match the official release schedule.
 
 Local checks: fmt, clippy, 108 Rust tests, ten reporting tests, content and schemas pass. Sync fixture counts follow the loaded catalog and the fake ingestion source targets its intended pair, retaining existing behavior checks. Remote CI was not run.
+
+### V0.1.45 -- JVM and .NET complete the runtime catalog
+
+All five planned runtimes now have entries. The JVM lists Java, Kotlin and Scala and describes distributions within one entity; its support-cycle ID explicitly represents Eclipse Temurin. Modern .NET lists C# and its supported execution targets, distinguishes .NET Framework, and explains native-AOT and UI-portability limits. Both include sourced fits, trade-offs and selection guidance, reviewed against official documentation and Wikidata.
+
+Checks: fmt, clippy, 108 Rust tests, ten reporting tests, content and schemas pass. All 15 uncredentialed catalog IDs verify; thirteen credentialed IDs skip. The new entries pass all 20 link fields after retrying transient timeouts. Full-catalog runs encountered intermittent documentation-host timeouts; remote CI was not run.

@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../schemas/runtime.schema.json
+id: dotnet
+kind: runtime
+name: .NET
+aliases: [.net core, dotnet core]
+tagline: Run C# applications with managed libraries and multiple deployment options.
+summary: >
+  .NET is a development platform with runtimes, libraries and tools for C# and
+  other .NET languages. Microsoft distributes the .NET SDK and runtime;
+  CoreCLR and Mono serve different execution targets within modern .NET.
+  This entry covers modern cross-platform .NET rather than the Windows-only
+  .NET Framework, which has a separate support lifecycle.
+links:
+  website: https://dotnet.microsoft.com/en-us/
+  docs: https://learn.microsoft.com/en-us/dotnet/
+  repo: https://github.com/dotnet/runtime
+ids:
+  wikidata: Q21622213
+  github: dotnet/runtime
+  stackoverflow_tag: .net
+  endoflife: dotnet
+  simple_icons: dotnet
+traits:
+  languages: [csharp]
+  targets: [linux, macos, windows, ios, android, browser, wasm]
+domains:
+  - domain: web-backend
+    fit: excellent
+    note: ASP.NET Core supplies a supported application framework on the .NET runtime.
+  - domain: cli
+    fit: good
+    note: Console tools can use managed deployment or native AOT where their dependencies permit it.
+  - domain: desktop
+    fit: good
+    note: UI-framework support determines the operating systems an application can target.
+strengths:
+  - title: Shared application platform
+    detail: Runtime and library support spans console tools, web services and other application models, with frameworks providing the application-specific layer.
+    sources: [https://learn.microsoft.com/en-us/dotnet/core/introduction, https://learn.microsoft.com/en-us/dotnet/fundamentals/implementations]
+  - title: Native deployment option
+    detail: Native AOT compiles supported applications ahead of time and does not require a separately installed .NET runtime.
+    sources: [https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/]
+weaknesses:
+  - title: AOT restricts dynamic behavior
+    detail: Native AOT does not support dynamic assembly loading or runtime code generation; reflection-heavy dependencies need compatibility work.
+    sources: [https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/]
+  - title: UI portability depends on the framework
+    detail: A cross-platform runtime does not make every UI stack portable; WPF runs on Windows.
+    sources: [https://learn.microsoft.com/en-us/dotnet/desktop/wpf/overview/]
+choose_when:
+  - you are building C# services or tools and want the .NET libraries and deployment options
+  - you need to share managed application code while choosing UI frameworks that support each target platform
+learning:
+  curve: moderate
+  resources:
+    - title: Introduction to .NET
+      url: https://learn.microsoft.com/en-us/dotnet/core/introduction
+      kind: docs
+      free: true

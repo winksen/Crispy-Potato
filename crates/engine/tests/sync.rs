@@ -23,8 +23,17 @@ async fn sync_is_atomic_repeatable_and_preserves_history(pool: PgPool) {
         &Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content"),
         temp.path(),
     );
+    let catalog = engine::content::load(temp.path()).unwrap();
+    let sample_count: usize = catalog
+        .entities
+        .iter()
+        .map(|entity| entity.samples.len())
+        .sum();
     let first = engine::sync::sync(&pool, temp.path()).await.unwrap();
-    assert_eq!(first.changed, 2);
+    assert_eq!(
+        first.changed,
+        u64::try_from(catalog.entities.len()).unwrap()
+    );
     assert!(
         engine::sync::sync(&pool, temp.path())
             .await
@@ -35,7 +44,7 @@ async fn sync_is_atomic_repeatable_and_preserves_history(pool: PgPool) {
         .fetch_one(&pool)
         .await
         .unwrap();
-    assert_eq!(samples.0, 2);
+    assert_eq!(samples.0, i64::try_from(sample_count).unwrap());
     let reverse: (i64,) = sqlx::query_as("SELECT count(*) FROM relations WHERE target_id='rust'")
         .fetch_one(&pool)
         .await

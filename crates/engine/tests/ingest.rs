@@ -51,8 +51,8 @@ impl Source for Fake {
             schedule_seconds: 86400,
         }
     }
-    fn applies(&self, _: &model::Entity) -> bool {
-        true
+    fn applies(&self, entity: &model::Entity) -> bool {
+        matches!(entity.id.as_str(), "rust" | "react")
     }
     fn fetch<'a>(&'a self, _: &'a Context<'a>, entity: &'a model::Entity) -> FetchFuture<'a> {
         Box::pin(async move {

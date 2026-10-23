@@ -58,11 +58,12 @@ async fn statement_counts_stay_bounded_for_large_batches_and_catalogs(
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
     let temp = tempfile::tempdir()?;
     copy(&root, temp.path());
+    let catalog = engine::content::load(&root).unwrap();
+    let catalog_size = catalog.entities.len();
     start();
     let small = engine::sync::sync(&pool, temp.path()).await?;
     let small_queries = stop();
-    assert_eq!(small.changed, 2);
-    let catalog = engine::content::load(&root).unwrap();
+    assert_eq!(small.changed, u64::try_from(catalog_size).unwrap());
     let original = catalog.entities.iter().find(|e| e.id == "rust").unwrap();
     for n in 0..100 {
         let mut entity = original.clone();
@@ -133,7 +134,8 @@ async fn statement_counts_stay_bounded_for_large_batches_and_catalogs(
     assert_eq!(held.len(), 1);
     tx.commit().await?;
     println!(
-        "Observed SQL statements: sync {small_queries} for 2 and 102 entities; 1,000-observation transaction {observation_queries}"
+        "Observed SQL statements: sync {small_queries} for {catalog_size} and {} entities; 1,000-observation transaction {observation_queries}",
+        catalog_size + 100
     );
     Ok(())
 }

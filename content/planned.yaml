@@ -53,8 +53,5 @@ frameworks:
   - kotlin-multiplatform
 
 runtimes:
-  - nodejs
-  - deno
-  - bun
   - jvm
   - dotnet

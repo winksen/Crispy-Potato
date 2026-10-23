@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../../schemas/runtime.schema.json
+id: bun
+kind: runtime
+name: Bun
+tagline: Run JavaScript and TypeScript with a bundled package manager and build tools.
+summary: >
+  Bun combines a JavaScript and TypeScript runtime with package management,
+  bundling and a test runner. It uses JavaScriptCore and implements Node APIs
+  to run existing packages. Compatibility has documented gaps, so migration
+  requires testing the APIs and tools an application uses.
+links:
+  website: https://bun.com/
+  docs: https://bun.com/docs
+  repo: https://github.com/oven-sh/bun
+ids:
+  wikidata: Q113048518
+  github: oven-sh/bun
+  stackoverflow_tag: bun
+  endoflife: bun
+  simple_icons: bun
+traits:
+  languages: [javascript, typescript]
+  targets: [linux, macos, windows]
+domains:
+  - domain: scripting
+    fit: good
+    note: Direct TypeScript execution and integrated package commands suit project automation.
+  - domain: web-backend
+    fit: good
+    note: HTTP APIs support services, but applications using Node-specific behavior need compatibility testing.
+strengths:
+  - title: Integrated project tools
+    detail: The runtime, package manager, bundler and test runner can be used from the same executable.
+    sources: [https://bun.com/docs]
+  - title: TypeScript and JSX support
+    detail: Bun accepts TypeScript files and JSX, reducing the separate execution setup needed for scripts and application tooling.
+    sources: [https://bun.com/docs/typescript]
+weaknesses:
+  - title: Node API differences
+    detail: Some TLS features and other Node APIs are incomplete or behave differently, so a successful installation does not establish application compatibility.
+    sources: [https://bun.com/docs/runtime/nodejs-compat]
+  - title: Different engine diagnostics
+    detail: V8 compatibility methods do not reproduce all V8 profiling features or serialization behavior; tooling may need JavaScriptCore-specific alternatives.
+    sources: [https://bun.com/docs/runtime/nodejs-compat]
+choose_when:
+  - you want one executable for runtime, package installation, bundling and tests and can verify application compatibility
+  - you are starting JavaScript or TypeScript tooling that does not depend on V8-specific diagnostics
+learning:
+  curve: moderate
+  resources:
+    - title: Bun documentation
+      url: https://bun.com/docs
+      kind: docs
+      free: true

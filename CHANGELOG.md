@@ -2,6 +2,25 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.44 (2026-10-22)
+
+The catalog includes Node.js, Deno and Bun with distinct runtime trade-offs.
+
+### Added
+- **JavaScript runtimes.** Three sourced entries describe supported languages, targets, domain fits, strengths, weaknesses and selection guidance. Wikidata, GitHub, Stack Overflow and endoflife.date IDs connect them to future collection; their planned IDs are removed.
+
+### Fixed
+- **Catalog test fixtures.** Sync tests derive expected entity and sample counts from their loaded fixtures, preserving their query budgets and history checks as the catalog grows. The ingestion success/failure fixture applies only to its two intended entities.
+
+### Checks
+- fmt, clippy, 108 Rust tests, ten reporting tests, content and schemas pass. All 11 uncredentialed catalog IDs and 40 link fields pass live checks. Node.js 22, 24 and 26 release/EOL dates match the official schedule. Content was reviewed against official documentation and Wikidata.
+
+### Not done
+- Ten GitHub/Stack Exchange IDs skip under D5 because credentials are absent. Remote CI was not run. No dependency or SQL change requires a new audit or metadata generation.
+
+### Upgrading
+- Run cli sync to import the new content into an existing database.
+
 ## V0.1.43 (2026-10-22)
 
 Live content checks use smaller npm responses and share repeated URL work.

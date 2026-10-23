@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../schemas/runtime.schema.json
+id: nodejs
+kind: runtime
+name: Node.js
+aliases: [node, node.js]
+tagline: Run JavaScript servers and tools with event-driven I/O.
+summary: >
+  Node.js runs JavaScript outside the browser using V8. Its event loop and
+  asynchronous APIs support network services and command-line tools.
+  TypeScript can run through type stripping or a separate compiler, depending
+  on the syntax and project configuration.
+links:
+  website: https://nodejs.org/
+  docs: https://nodejs.org/api/
+  repo: https://github.com/nodejs/node
+ids:
+  wikidata: Q756100
+  github: nodejs/node
+  stackoverflow_tag: node.js
+  endoflife: nodejs
+  simple_icons: nodedotjs
+traits:
+  languages: [javascript, typescript]
+  targets: [linux, macos, windows]
+domains:
+  - domain: web-backend
+    fit: excellent
+    note: Asynchronous networking suits I/O-heavy services; CPU-heavy work needs separate scheduling.
+  - domain: cli
+    fit: good
+    note: Suitable for JavaScript tooling when a runtime installation is acceptable.
+strengths:
+  - title: Asynchronous networking
+    detail: Network operations can yield to the event loop, allowing other requests to proceed while I/O completes.
+    sources: [https://nodejs.org/learn/asynchronous-work/dont-block-the-event-loop]
+  - title: Published support cycles
+    detail: LTS and end-of-life dates provide a basis for planning production runtime upgrades.
+    sources: [https://endoflife.date/nodejs]
+weaknesses:
+  - title: Blocking work delays other requests
+    detail: Long callbacks and synchronous operations can monopolize the event loop; CPU-heavy tasks need partitioning or offloading.
+    sources: [https://nodejs.org/learn/asynchronous-work/dont-block-the-event-loop]
+  - title: Type stripping has limits
+    detail: Native TypeScript execution does not read tsconfig.json or transform path aliases; some projects still need a separate build step.
+    sources: [https://nodejs.org/api/typescript.html]
+choose_when:
+  - you need a JavaScript service with published LTS schedules and dependencies that target Node APIs
+  - you are extending an existing Node application and want to avoid testing a replacement runtime's compatibility
+relations:
+  alternatives: [deno, bun]
+learning:
+  curve: moderate
+  resources:
+    - title: Node.js documentation
+      url: https://nodejs.org/api/
+      kind: docs
+      free: true

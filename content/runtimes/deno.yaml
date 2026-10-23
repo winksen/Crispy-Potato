@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=../../schemas/runtime.schema.json
+id: deno
+kind: runtime
+name: Deno
+tagline: Run JavaScript and TypeScript with explicit permissions and integrated tools.
+summary: >
+  Deno is a JavaScript and TypeScript runtime with built-in development tools.
+  Access to sensitive system resources requires permissions.
+  Node API and npm compatibility allow existing packages to be used, with
+  additional configuration for native addons and some package layouts.
+links:
+  website: https://deno.com/
+  docs: https://docs.deno.com/runtime/
+  repo: https://github.com/denoland/deno
+ids:
+  wikidata: Q65070939
+  github: denoland/deno
+  stackoverflow_tag: deno
+  endoflife: deno
+  simple_icons: deno
+traits:
+  languages: [javascript, typescript]
+  targets: [linux, macos, windows]
+domains:
+  - domain: scripting
+    fit: good
+    note: Direct TypeScript execution and scoped permissions suit scripts with known resource needs.
+  - domain: web-backend
+    fit: good
+    note: Built-in serving and npm compatibility support services; check dependencies that assume Node behavior.
+strengths:
+  - title: Explicit resource access
+    detail: File, network, environment and subprocess access can be granted individually instead of giving a script unrestricted system access.
+    sources: [https://docs.deno.com/runtime/reference/permissions/]
+  - title: Integrated development commands
+    detail: Formatting, linting, testing and TypeScript execution are available through the runtime's command-line tools.
+    sources: [https://docs.deno.com/runtime/]
+weaknesses:
+  - title: Native packages need extra setup
+    detail: Node-API addons require a local node_modules directory and FFI permission; packages with build scripts may need explicit approval.
+    sources: [https://docs.deno.com/runtime/fundamentals/node/]
+  - title: Permissions need operational configuration
+    detail: Automated scripts must receive their required permissions up front; an interactive permission prompt is unsuitable for unattended jobs.
+    sources: [https://docs.deno.com/runtime/reference/permissions/]
+choose_when:
+  - you want TypeScript scripts with explicit access to files and networks and integrated formatting and testing
+  - you can validate npm dependencies against Deno and prefer its permission model over unrestricted runtime access
+relations:
+  alternatives: [bun]
+learning:
+  curve: moderate
+  resources:
+    - title: Deno runtime guide
+      url: https://docs.deno.com/runtime/
+      kind: docs
+      free: true

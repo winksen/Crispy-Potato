@@ -2,6 +2,29 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.36 (2026-10-22)
+
+Health checks separate collection secrets from issue-writing permissions and CI audits its workflows.
+
+### Security
+- **Three health jobs.** Link checks have read-only repository access and no collection secrets. ID checks build before receiving only the two collection credentials in the `content-collection` environment. Only the reporter has issue-write access; it reads bounded JSON artifacts from this run, performs no checkout and executes no artifact or workspace code. Health jobs run only on main.
+- **Workflow audit.** Pinned zizmor 1.31.1 checks all workflow files in offline auditor mode. Action references remain pinned to verified commit SHAs; permissions are declared per job and all findings are addressed.
+
+### Fixed
+- **One health issue.** The marker and bot flag identify the existing issue regardless of whether gh spells its author `app/github-actions` or `github-actions[bot]`. Regression tests cover reopening, recovery, human-owned issues and invalid reports; a parity test keeps the inline reporter identical to the tested local script.
+
+### Changed
+- **Toolchain and caches.** Rust is pinned to 1.96.0 in one file read by CI and health jobs. Only main push builds save the shared Rust cache; health jobs only restore it. A separate versioned cache avoids rebuilding sqlx-cli 0.9.0 on every CI run.
+
+### Checks and limitations
+- fmt, clippy, all 76 Rust tests including Postgres, ten reporting tests, content validation and schema checks pass under Rust 1.96.0. zizmor 1.31.1 in offline auditor mode reports no findings or suppressed findings. Remote workflow execution was not run.
+
+### Not done
+- Remote workflows and GitHub environment settings were not exercised because nothing is pushed. The gh regression fixture uses its JSON shape and app-prefixed bot name; no issue was created or changed locally.
+
+### Upgrading
+- Rustup installs the pinned 1.96.0 toolchain. Configure the two collection secrets in the `content-collection` GitHub environment (repository secrets remain fallback values), restrict that environment to main, and continue keeping the reporting token separate. Pin updates are reviewed changes to rust-toolchain.toml.
+
 ## V0.1.35 (2026-10-22)
 
 Database, HTTP and hashing dependencies move to their next major versions.

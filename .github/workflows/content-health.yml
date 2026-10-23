@@ -3,36 +3,171 @@ on:
   schedule:
     - cron: '40 3 * * 1'
   workflow_dispatch:
-permissions:
-  contents: read
-  issues: write
+permissions: {}
 concurrency:
   group: content-health
   cancel-in-progress: false
 jobs:
-  check:
+  links:
+    name: Public link checks
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           persist-credentials: false
-      - name: Install toolchain
-        run: rustup toolchain install stable --profile minimal
-      - name: Check links
-        id: links
-        continue-on-error: true
+      - name: Install pinned toolchain
+        shell: python
+        run: |
+          import pathlib, subprocess, tomllib
+          channel = tomllib.loads(pathlib.Path('rust-toolchain.toml').read_text())['toolchain']['channel']
+          subprocess.run(['rustup', 'toolchain', 'install', channel, '--profile', 'minimal'], check=True)
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: rust
+          save-if: false
+      - name: Check links without collection secrets
         run: cargo run --quiet --locked -p cp-cli -- check-links > link-report.json
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: links
+          path: link-report.json
+          retention-days: 7
+  identifiers:
+    name: Credentialed identifier checks
+    if: github.ref == 'refs/heads/main'
+    environment: content-collection
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Install pinned toolchain
+        shell: python
+        run: |
+          import pathlib, subprocess, tomllib
+          channel = tomllib.loads(pathlib.Path('rust-toolchain.toml').read_text())['toolchain']['channel']
+          subprocess.run(['rustup', 'toolchain', 'install', channel, '--profile', 'minimal'], check=True)
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: rust
+          save-if: false
+      - name: Build before exposing collection credentials
+        run: cargo build --locked -p cp-cli
       - name: Verify external identifiers
-        id: identifiers
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.COLLECTION_GITHUB_TOKEN }}
           STACKEXCHANGE_KEY: ${{ secrets.STACKEXCHANGE_KEY }}
-        run: cargo run --quiet --locked -p cp-cli -- verify-ids > id-report.json
-      - name: Update the single health issue
+        run: ./target/debug/cli verify-ids > id-report.json
+      - name: Upload report
         if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: identifiers
+          path: id-report.json
+          retention-days: 7
+  report:
+    name: Maintain the content health issue
+    needs: [links, identifiers]
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write # Maintain the single content health issue.
+    steps:
+      # Reports are data from this run only; no checkout or artifact code executes.
+      - name: Download link report
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: links
+          path: reports/links
+      - name: Download identifier report
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: identifiers
+          path: reports/identifiers
+      - name: Update the single health issue
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: python scripts/checks/weekly.py link-report.json id-report.json
+        shell: python
+        run: |
+          """Summarize local reports; maintain one bot-owned issue. Never interpolate shell code."""
+          import json
+          import html
+          import pathlib
+          import subprocess
+          import sys
+          import tempfile
+
+          TITLE = "Content health checks"
+          MARKER = "<!-- crispy-potato-content-health -->"
+
+
+          def summary(paths):
+              problems = []
+              skipped = []
+              for path in paths:
+                  try:
+                      file = pathlib.Path(path)
+                      if file.stat().st_size > 1024 * 1024:
+                          raise ValueError("oversized report")
+                      report = json.loads(file.read_text(encoding="utf-8"))
+                      for key in ("problems", "skipped"):
+                          items = report.get(key, []) if key == "skipped" else report[key]
+                          if not isinstance(items, list) or len(items) > 1000:
+                              raise ValueError("invalid report items")
+                          if any(not isinstance(item, dict) or any(
+                              not isinstance(item.get(field), str)
+                              for field in ("file", "field", "message")
+                          ) for item in items):
+                              raise ValueError("invalid report item")
+                      problems.extend(report["problems"])
+                      skipped.extend(report.get("skipped", []))
+                  except (OSError, ValueError, KeyError, TypeError):
+                      problems.append({"file": path, "field": "check", "message": "Check failed before producing a valid report"})
+              lines = [MARKER, "Automated content checks.", ""]
+              for heading, items in [("Problems", problems), ("Skipped checks", skipped)]:
+                  lines.extend([f"### {heading}", ""])
+                  for item in items:
+                      safe = {key: html.escape(" ".join(value.split())[:1000]).replace("`", "&#96;")
+                              for key, value in item.items() if isinstance(value, str)}
+                      lines.append(f"- `{safe['file']}` / `{safe['field']}`: {safe['message']}")
+                  if not items:
+                      lines.append("None.")
+                  lines.append("")
+              return "\n".join(lines)[:60000], bool(problems or skipped)
+
+
+          def main(paths):
+              body, needs_attention = summary(paths)
+              issues = json.loads(subprocess.check_output(["gh", "issue", "list", "--state", "all", "--search", f'"{TITLE}" in:title', "--limit", "100", "--json", "number,title,author,body,state"], text=True))
+              issue = next((i for i in issues if i["title"] == TITLE
+                            and MARKER in (i.get("body") or "")
+                            and i.get("author", {}).get("is_bot") is True), None)
+              if issue is None and not needs_attention:
+                  return
+              with tempfile.TemporaryDirectory() as directory:
+                  path = pathlib.Path(directory) / "body.md"
+                  path.write_text(body, encoding="utf-8")
+                  if issue is None:
+                      subprocess.run(["gh", "issue", "create", "--title", TITLE, "--body-file", str(path)], check=True)
+                  else:
+                      number = str(issue["number"])
+                      subprocess.run(["gh", "issue", "edit", number, "--body-file", str(path)], check=True)
+                      if needs_attention and issue["state"] == "CLOSED":
+                          subprocess.run(["gh", "issue", "reopen", number], check=True)
+                      elif not needs_attention and issue["state"] == "OPEN":
+                          subprocess.run(["gh", "issue", "close", number], check=True)
+
+          main(["reports/links/link-report.json", "reports/identifiers/id-report.json"])

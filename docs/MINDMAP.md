@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.35` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.36` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -64,7 +64,7 @@ mindmap
       fmt, clippy and validate
       No unsafe, no unwrap outside tests
       CI on every push and pull request
-      Weekly links and external ID health report
+      Separate links, credentialed IDs and issue reporting jobs
       Daily cargo deny and dependency issue, plus Dependabot
     Not built yet
       Source adapters
@@ -167,7 +167,7 @@ Dependencies: `serde`, `serde-saphyr`, `url`, `indexmap`, `clap`, `schemars`, `s
 
 **Supply chain** (since V0.1.5):
 - `deny.toml`: RustSec advisories fail the check (unmaintained crates only when the workspace depends on them directly); licenses must be on a permissive allow-list that fits D1, and the workspace's own crates are checked too; crates.io is the only source; no `*` versions; duplicate versions are warned.
-- `rust-toolchain.toml` pins the stable channel with rustfmt and clippy.
+- `rust-toolchain.toml` pins Rust 1.96.0 with rustfmt and clippy; CI and health jobs read that single version.
 - Dependabot (`.github/dependabot.yml`) opens weekly pull requests for Cargo and GitHub Actions, for releases at least a week old.
 
 ## 8. Not built yet
@@ -282,3 +282,9 @@ Checks: fmt, clippy, 75 Rust tests including Postgres, validate, schema, aliases
 SQLx and its CLI use 0.9.0 with regenerated offline metadata. Reqwest 0.13.5 uses the system certificate verifier and an explicit ring provider, preserving HTTP/2 and decompression with aws-lc disabled. SHA-256 content and cache identities use sha2 0.11.1. The license policy is unchanged; cargo deny and the whole-lockfile OSV scan pass, and the old inactive rsa entry is gone.
 
 Checks: fmt, clippy, 76 Rust tests, five report tests, validate, schema, sqlx prepare --check and cargo deny pass. OSV is clean; five live IDs pass and four skip under D5. Remote CI awaits a push.
+
+### V0.1.36 — Least-privilege workflow jobs
+
+Health checks use separate read-only links and credentialed-ID jobs, plus an issue-only reporter with no checkout. Only the identifier step receives the collection secrets, through its dedicated environment on main. Marker-based bot issue matching handles gh app-prefixed logins. Reports are bounded JSON, and tests keep the local and inline reporters identical. CI runs pinned zizmor 1.31.1 in auditor mode, pins Rust 1.96.0, and caches sqlx-cli; health jobs only restore the build cache.
+
+Checks: fmt, clippy, 76 Rust tests, ten reporting tests, validate and schema pass; zizmor auditor mode reports no findings. GitHub execution awaits a push.

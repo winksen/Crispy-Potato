@@ -15,8 +15,7 @@ on:
     - cron: '20 4 * * *'
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -28,6 +27,8 @@ env:
 
 jobs:
   rust:
+    permissions:
+      contents: read
     if: github.event_name != 'schedule'
     name: Format, lints, content and tests
     runs-on: ubuntu-latest
@@ -53,16 +54,31 @@ jobs:
       # rustup comes with the runner image, so no action is needed for it; it
       # also reads rust-toolchain.toml.
       - name: Install the Rust toolchain
+        shell: python
         run: |
-          rustup toolchain install stable --profile minimal --component rustfmt,clippy
-          rustup default stable
+          import pathlib, subprocess, tomllib
+          channel = tomllib.loads(pathlib.Path('rust-toolchain.toml').read_text())['toolchain']['channel']
+          subprocess.run(['rustup', 'toolchain', 'install', channel, '--profile', 'minimal', '--component', 'rustfmt,clippy'], check=True)
 
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: rust
+          save-if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
 
       - name: Format
         run: cargo fmt --all --check
 
+      - name: Cache SQLx tooling
+        id: sqlx-cache
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
+        with:
+          path: |
+            ~/.cargo/bin/sqlx
+            ~/.cargo/bin/cargo-sqlx
+          key: sqlx-cli-0.9.0-${{ runner.os }}-${{ runner.arch }}-rustls-postgres
+
       - name: Install SQLx tooling
+        if: steps.sqlx-cache.outputs.cache-hit != 'true'
         run: cargo install sqlx-cli --version 0.9.0 --no-default-features --features rustls,postgres
 
       - name: Check SQL metadata
@@ -96,6 +112,8 @@ jobs:
 
   # Advisories, licenses, banned crates and sources, as set in deny.toml.
   deny:
+    permissions:
+      contents: read
     name: Dependencies (cargo deny)
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -107,6 +125,22 @@ jobs:
         with:
           command: check
 
+  workflows:
+    name: Workflow security
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          persist-credentials: false
+      - name: Install pinned workflow linter
+        run: pipx install zizmor==1.31.1
+      - name: Audit every workflow
+        run: zizmor --offline --strict-collection --persona auditor .github/workflows
+
   advisory-report:
     name: Maintain the daily dependency issue
     needs: deny
@@ -114,7 +148,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      issues: write
+      issues: write # Maintain the single dependency health issue.
     env:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}

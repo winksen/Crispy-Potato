@@ -1,0 +1,16 @@
+[
+  {
+    "author": {"id": "BOT_example", "is_bot": true, "login": "app/github-actions", "name": "github-actions"},
+    "body": "<!-- crispy-potato-content-health -->\nAutomated content checks.",
+    "number": 17,
+    "state": "CLOSED",
+    "title": "Content health checks"
+  },
+  {
+    "author": {"id": "USER_example", "is_bot": false, "login": "contributor", "name": "Contributor"},
+    "body": "A user report without the automation marker",
+    "number": 18,
+    "state": "OPEN",
+    "title": "Content health checks"
+  }
+]

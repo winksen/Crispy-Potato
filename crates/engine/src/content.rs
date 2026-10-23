@@ -7,6 +7,7 @@
 
 mod check;
 mod placeholders;
+mod yaml_strings;
 
 use std::collections::HashSet;
 use std::fmt;
@@ -265,6 +266,16 @@ impl<'a> Loader<'a> {
             } else if meta.len() > MAX_FILE_BYTES {
                 self.diags.push(&path, too_large(meta.len()));
                 self.refused.insert(path);
+            } else if path.starts_with(self.diags.root.join("samples"))
+                && let Some(text) = self.read(&path)
+                && let Some(c) = text
+                    .chars()
+                    .find(|c| crate::text_policy::forbidden(*c, true))
+            {
+                self.diags.push(
+                    &path,
+                    format!("sample contains forbidden character U+{:04X}", u32::from(c)),
+                );
             }
         }
     }
@@ -279,7 +290,36 @@ impl<'a> Loader<'a> {
         if !self.within_budget(path, &source) {
             return None;
         }
+        if !self.check_text(path, &source) {
+            return None;
+        }
         self.parse(path, &source)
+    }
+
+    fn check_text(&mut self, path: &Path, source: &str) -> bool {
+        let mut valid = true;
+        for (field, value) in yaml_strings::strings(source, yaml_options()) {
+            if let Some(problem) = crate::text_policy::problem(&field, &value) {
+                // Escape field names too: they can themselves be hostile map keys.
+                self.diags
+                    .push(path, format!("{}: {problem}", field.escape_debug()));
+                valid = false;
+            }
+        }
+        // YAML can normalize literal separators before our scalar visitor sees
+        // them. Reject those in the source (including comments) as well.
+        if valid
+            && let Some(c) = source
+                .chars()
+                .find(|c| crate::text_policy::forbidden(*c, true))
+        {
+            self.diags.push(
+                path,
+                format!("contains forbidden character U+{:04X}", u32::from(c)),
+            );
+            valid = false;
+        }
+        valid
     }
 
     /// Scans `source` against the parser's budget before anything is
@@ -394,6 +434,10 @@ impl<'a> Loader<'a> {
                     format!("{field}: replace the {PLACEHOLDER} placeholder"),
                 );
             }
+            return None;
+        }
+
+        if !self.check_text(path, &source) {
             return None;
         }
 

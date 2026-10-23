@@ -2,6 +2,24 @@
 
 What changed in each release, newest first, with what to do when upgrading. Versions follow [semantic versioning](https://semver.org): the 0.1.x releases lead to `0.2.0`, the public preview. Every release, shipped and planned, has a row in the [release index](docs/RELEASES_0.1.md), and the [mindmap](docs/MINDMAP.md) describes what is built.
 
+## V0.1.39 (2026-10-22)
+
+Curated and collected text share a character policy and every curated string has a length limit.
+
+### Security
+- **Text boundaries.** Controls, bidirectional controls, soft hyphens, zero-width characters, Arabic letter marks, tag characters and Unicode line/paragraph separators are removed from collected text and refused in decoded curated YAML strings. Descriptive fields and code samples allow tabs and ordinary line endings. Samples and vocabulary labels are checked too; diagnostics name the code point without reproducing it.
+- **Field limits.** Unicode character limits cover all curated strings and appear in the generated schemas, with separate limits for prose, titles, names, links and identifiers. Raw decoded values are checked before URL parsing can hide controls.
+- **Content URLs.** User information, IP literals and localhost domains are refused without echoing credentials.
+
+### Checks
+- fmt, clippy, 95 Rust tests, ten reporting tests, content validation and regenerated schema checks pass. Character-class, sample, URL and schema-coverage regressions pass.
+
+### Not done
+- Remote CI is not run because nothing is pushed. Live link and ID checks were not repeated; their transport passed in V0.1.38.
+
+### Upgrading
+- Run cargo validate before syncing existing content; replace forbidden characters and shorten fields reported over their documented limits. No migration or new dependency is needed.
+
 ## V0.1.38 (2026-10-22)
 
 Outbound requests enforce public destinations, bounded backoff and stable cache identities.

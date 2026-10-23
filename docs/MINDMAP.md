@@ -2,7 +2,7 @@
 
 > **Audience:** contributors, reviewers and whoever implements the next release.
 > **Companions:** [architecture.md](architecture.md) says how the system is meant to work, [data-model.md](data-model.md) what each content field means, the [release index](RELEASES_0.1.md) what ships when, and the [changelog](../CHANGELOG.md) what each release changed.
-> **Scope:** the repository at `V0.1.38` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
+> **Scope:** the repository at `V0.1.39` (2026-10-22). Postgres storage and sync, the collection framework, content tooling, live link checks and external ID verification are built. See the release notes below for additions.
 
 ---
 
@@ -302,3 +302,9 @@ Source clients permit only quota-table HTTPS hosts; link clients permit public H
 Stack Exchange backoff over 300 seconds fails fast without delaying other requests. Timeout retries release concurrency permits before waiting. Public cache identities exclude credentials, survive token rotation and expire after 30 unused days.
 
 Checks: fmt, clippy, 90 Rust tests, ten reporting tests, content validation, schemas, SQL metadata and cargo deny pass. Live checks pass for 16 links and five IDs; four credentialed IDs skip under D5. Remote CI awaits a push.
+
+### V0.1.39 — Shared character policy and curated text limits
+
+Curated YAML strings, vocabulary labels and code samples reject controls, bidirectional controls and the specified invisible characters. Descriptive prose and samples permit tabs and ordinary line endings. Decoded scalars are checked before URL normalization, and literal separators are checked before YAML can normalize them. Collected text removes the same prohibited characters. A shared field policy bounds every string; generated schemas expose the limits. Content URLs refuse user information, IP literals and localhost domains. The data model lists the character and length rules.
+
+Checks: fmt, clippy, 95 Rust tests, ten reporting tests, content validation and regenerated schema checks pass. Remote CI was not run; live transport checks were last run in V0.1.38.

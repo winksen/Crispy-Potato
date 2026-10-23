@@ -24,6 +24,124 @@ fn repository_content_is_valid() {
 }
 
 #[test]
+fn curated_and_collected_text_share_the_character_policy() {
+    for code in [
+        0, 0x7f, 0x85, 0xad, 0x61c, 0x200b, 0x200c, 0x200d, 0x200e, 0x200f, 0x2028, 0x2029, 0x202a,
+        0x202e, 0x2060, 0x2061, 0x2062, 0x2063, 0x2064, 0x2066, 0x2069, 0xfeff, 0xe0000, 0xe007f,
+    ] {
+        let c = char::from_u32(code).unwrap();
+        let value = format!("visible{c}text");
+        assert_eq!(
+            engine::untrusted::text(&value),
+            "visibletext",
+            "U+{code:04X}"
+        );
+        let source = format!(
+            "{LANGUAGE}\naliases: [{}]\n",
+            serde_json::to_string(&value).unwrap()
+        );
+        let report = problems("", &[("languages/testlang.yaml", &source)]);
+        assert!(
+            report
+                .iter()
+                .any(|s| s.contains("contains forbidden character")),
+            "U+{code:04X}: {report:?}"
+        );
+    }
+}
+
+#[test]
+fn samples_and_vocabulary_text_are_checked() {
+    let dir = fixture(
+        "",
+        &[
+            ("languages/testlang.yaml", LANGUAGE),
+            ("samples/testlang/example.rs", "// safe\u{202e}hidden"),
+        ],
+    );
+    assert!(
+        report_in(dir.path())
+            .iter()
+            .any(|s| s.contains("sample contains forbidden character U+202E"))
+    );
+    fs::write(
+        dir.path().join("samples/testlang/example.rs"),
+        "fn main() {\r\n\tprintln!(\"hello\");\r\n}\n",
+    )
+    .unwrap();
+    assert!(report_in(dir.path()).is_empty());
+    let path = dir.path().join("vocab/domains.yaml");
+    let text = fs::read_to_string(&path)
+        .unwrap()
+        .replace("Web frontend", "Web\u{200b} frontend");
+    fs::write(path, text).unwrap();
+    assert!(content::load_vocab(dir.path()).is_err());
+}
+
+#[test]
+fn text_limits_and_multiline_exceptions_are_enforced() {
+    for (field, max) in [("name", 100), ("summary", 4000)] {
+        let old = if field == "name" {
+            "name: Testlang"
+        } else {
+            "summary: Testlang is used to check the validator."
+        };
+        let value = "é".repeat(max);
+        let source = LANGUAGE.replace(old, &format!("{field}: {value}"));
+        assert!(problems("", &[("languages/testlang.yaml", &source)]).is_empty());
+        let source = LANGUAGE.replace(old, &format!("{field}: {value}é"));
+        assert!(
+            problems("", &[("languages/testlang.yaml", &source)])
+                .iter()
+                .any(|s| s.contains("the limit is"))
+        );
+    }
+    for c in ['\t', '\n', '\r'] {
+        let value = serde_json::to_string(&format!("first{c}second")).unwrap();
+        let source = LANGUAGE.replace(
+            "summary: Testlang is used to check the validator.",
+            &format!("summary: {value}"),
+        );
+        assert!(problems("", &[("languages/testlang.yaml", &source)]).is_empty());
+        let source = LANGUAGE.replace("name: Testlang", &format!("name: {value}"));
+        assert!(
+            problems("", &[("languages/testlang.yaml", &source)])
+                .iter()
+                .any(|s| s.contains("forbidden character"))
+        );
+    }
+}
+
+#[test]
+fn content_urls_refuse_credentials_literals_and_localhost() {
+    for url in [
+        "https://user:secret@example.com",
+        "http://127.1",
+        "http://2130706433",
+        "http://[::1]",
+        "http://localhost",
+        "https://nested.localhost.",
+    ] {
+        let source = LANGUAGE.replace("website: https://example.com", &format!("website: {url}"));
+        let report = problems("", &[("languages/testlang.yaml", &source)]);
+        assert!(
+            report.iter().any(|s| s.starts_with("links.website:")),
+            "{url}: {report:?}"
+        );
+        assert!(!report.join(" ").contains("secret"));
+    }
+    let source = LANGUAGE.replace(
+        "website: https://example.com",
+        r#"website: "https://exam\tple.com""#,
+    );
+    assert!(
+        problems("", &[("languages/testlang.yaml", &source)])
+            .iter()
+            .any(|s| s.contains("forbidden character"))
+    );
+}
+
+#[test]
 fn entity_files_point_at_their_schema() {
     for kind in Kind::ALL {
         let Ok(entries) = fs::read_dir(repo_content().join(kind.dir())) else {

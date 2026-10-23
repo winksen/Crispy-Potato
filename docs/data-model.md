@@ -98,6 +98,35 @@ When you add a file, remove its id from `planned.yaml`. Validation fails while a
 
 Dates may be a year, a month or a day: `2013`, `2013-05` or `2015-05-15`. The year must be from 1940 to next year, and `timeline` milestones are listed in date order (a year sorts before the months in it).
 
+### Text safety and length limits (V0.1.39)
+
+All curated YAML strings, including vocabulary labels/descriptions and override values,
+are checked before typed parsing. Limits count Unicode characters, not UTF-8 bytes:
+
+| Field | Maximum characters |
+|---|---:|
+| Names, aliases, vocabulary labels, tagline | 100 |
+| Each `choose_when` statement | 140 |
+| Titles | 200 |
+| Summary | 4,000 |
+| Details, domain notes, override reasons, notable-user descriptions (`what`), vocabulary descriptions | 2,000 |
+| URLs (`website`, `docs`, `repo`, `url`, `source`, `sources`) | 2,048 |
+| Survey names, including year-specific names | 60 |
+| All other strings, including ids, references, paths and override string values | 256 |
+
+Existing narrower identifier-format limits still apply. The entity schemas carry these
+limits as `maxLength`. Samples retain the existing 256 KiB per-file limit.
+
+Control characters, bidirectional controls, Arabic letter marks, soft hyphens,
+zero-width characters (U+200B–U+200D, U+2060–U+2064, U+FEFF), tag characters
+(U+E0000–U+E007F) and Unicode line/paragraph separators are refused. Descriptive
+fields (`summary`, `detail`, `note`, `reason`, `what`, `description`) and samples
+allow tabs and ordinary LF/CRLF line endings. Collected single-line text removes
+the same prohibited characters before storage. Content URLs must use HTTP(S)
+with a domain name: user information, IP literals and `localhost` (including
+subdomains and trailing-dot spellings) are refused. Live requests additionally
+enforce the public-destination policy from V0.1.38.
+
 ### `choose_when`
 
 Each statement completes the sentence "Choose Rust when …", so it starts in lower case and leaves out those words:

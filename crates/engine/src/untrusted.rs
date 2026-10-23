@@ -13,7 +13,11 @@ pub fn decode<T: DeserializeOwned>(bytes: &[u8]) -> Result<T, &'static str> {
 }
 
 pub fn text(value: &str) -> String {
-    value.chars().filter(|c| !c.is_control() && !matches!(*c, '<' | '>' | '\u{200e}' | '\u{200f}' | '\u{202a}'..='\u{202e}' | '\u{2066}'..='\u{2069}')).take(256).collect()
+    value
+        .chars()
+        .filter(|c| !crate::text_policy::forbidden(*c, false) && !matches!(*c, '<' | '>'))
+        .take(256)
+        .collect()
 }
 
 fn key(value: &str) -> bool {

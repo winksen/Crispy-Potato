@@ -18,6 +18,7 @@ pub mod scaffold;
 pub mod schema;
 pub mod settings;
 pub mod sync;
+mod text_policy;
 pub mod untrusted;
 pub mod verify_ids;
 

@@ -570,6 +570,14 @@ fn required_text(r: &mut Report, field: impl Display, value: &str) {
 fn http_url(r: &mut Report, field: impl Display, url: &Url) {
     if !matches!(url.scheme(), "http" | "https") {
         r.error(field, format!("\"{url}\" must be an http or https URL"));
+    } else if !url.username().is_empty() || url.password().is_some() {
+        r.error(field, "URL must not contain user information");
+    } else if !matches!(url.host(), Some(url::Host::Domain(host)) if host.trim_end_matches('.') != "localhost" && !host.trim_end_matches('.').ends_with(".localhost"))
+    {
+        r.error(
+            field,
+            "URL must use a domain other than localhost, not an IP address",
+        );
     }
 }
 

@@ -105,9 +105,48 @@ pub fn entity_schema(kind: Kind, vocab: &Vocab) -> Result<String, String> {
         set_enum(target, terms);
     }
 
+    bound_strings(&mut schema, "");
     serde_json::to_string_pretty(&schema)
         .map(|json| json + "\n")
         .map_err(|err| err.to_string())
+}
+
+fn bound_strings(schema: &mut Value, field: &str) {
+    let string = schema.get("type").is_some_and(|t| {
+        t == "string"
+            || t.as_array()
+                .is_some_and(|a| a.iter().any(|t| t == "string"))
+    });
+    if string {
+        schema["maxLength"] = crate::text_policy::max_length(field).into();
+    }
+    for group in ["properties", "definitions"] {
+        if let Some(values) = schema.get_mut(group).and_then(Value::as_object_mut) {
+            for (name, value) in values {
+                bound_strings(value, &format!("{field}.{name}"));
+            }
+        }
+    }
+    for child in ["items", "additionalProperties"] {
+        if let Some(value) = schema.get_mut(child) {
+            bound_strings(value, field);
+        }
+    }
+    if let Some(values) = schema
+        .get_mut("patternProperties")
+        .and_then(Value::as_object_mut)
+    {
+        for value in values.values_mut() {
+            bound_strings(value, field);
+        }
+    }
+    for group in ["anyOf", "oneOf", "allOf"] {
+        if let Some(values) = schema.get_mut(group).and_then(Value::as_array_mut) {
+            for value in values {
+                bound_strings(value, field);
+            }
+        }
+    }
 }
 
 /// Restricts a string schema to the vocabulary's values, each described by its
@@ -131,6 +170,45 @@ mod tests {
     use crate::content;
 
     #[test]
+    fn every_string_schema_has_a_limit_including_survey_year_maps() {
+        fn inspect(value: &Value) {
+            if let Some(object) = value.as_object() {
+                if object.get("type").is_some_and(|t| {
+                    t == "string"
+                        || t.as_array()
+                            .is_some_and(|a| a.contains(&Value::from("string")))
+                }) {
+                    assert!(
+                        object
+                            .get("maxLength")
+                            .and_then(Value::as_u64)
+                            .is_some_and(|n| n > 0),
+                        "{value}"
+                    );
+                }
+                for child in object.values() {
+                    inspect(child);
+                }
+            } else if let Some(array) = value.as_array() {
+                for child in array {
+                    inspect(child);
+                }
+            }
+        }
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
+        let vocab = content::load_vocab(&root).unwrap();
+        for kind in Kind::ALL {
+            let schema: Value =
+                serde_json::from_str(&entity_schema(kind, &vocab).unwrap()).unwrap();
+            inspect(&schema);
+            assert_eq!(
+                schema["definitions"]["SurveyName"]["anyOf"][1]["patternProperties"]["^\\d+$"]["maxLength"],
+                60
+            );
+        }
+    }
+
+    #[test]
     fn every_kind_gets_a_schema_with_vocabulary_enums() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content");
         let vocab = content::load_vocab(&root).unwrap();
@@ -138,6 +216,16 @@ mod tests {
             let json = entity_schema(kind, &vocab).unwrap();
             let schema: Value = serde_json::from_str(&json).unwrap();
             assert_eq!(schema["additionalProperties"], Value::Bool(false));
+            assert_eq!(schema["properties"]["summary"]["maxLength"], 4000);
+            assert_eq!(schema["properties"]["aliases"]["items"]["maxLength"], 100);
+            assert_eq!(
+                schema["definitions"]["Point"]["properties"]["detail"]["maxLength"],
+                2000
+            );
+            assert_eq!(
+                schema["definitions"]["Links"]["properties"]["website"]["maxLength"],
+                2048
+            );
             let domains = &schema["definitions"]["DomainFit"]["properties"]["domain"]["enum"];
             assert!(
                 domains

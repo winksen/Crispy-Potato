@@ -38,6 +38,7 @@
             "Scientific computing: Simulation and numerical work in research and engineering.",
             "Games: Game engines and the games built with them."
           ],
+          "maxLength": 256,
           "type": "string"
         },
         "fit": {
@@ -45,6 +46,7 @@
         },
         "note": {
           "description": "Required when `fit` is `possible` or `poor`.",
+          "maxLength": 2000,
           "type": [
             "string",
             "null"
@@ -62,6 +64,7 @@
       "description": "How the engine finds this entity in each external source.",
       "properties": {
         "crates": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
@@ -69,6 +72,7 @@
         },
         "endoflife": {
           "description": "The endoflife.date product slug.",
+          "maxLength": 256,
           "type": [
             "string",
             "null"
@@ -76,54 +80,63 @@
         },
         "github": {
           "description": "`owner/repo`.",
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "hex": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "maven": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "npm": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "nuget": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "packagist": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "pub": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "pypi": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "rubygems": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
@@ -131,6 +144,7 @@
         },
         "simple_icons": {
           "description": "The Simple Icons slug the web app shows as the logo. The icons are CC0\nand come from the simple-icons package; no SVG is stored here.",
+          "maxLength": 256,
           "type": [
             "string",
             "null"
@@ -148,12 +162,14 @@
           "description": "The name used in the Stack Overflow Developer Survey."
         },
         "stackoverflow_tag": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
           ]
         },
         "wikidata": {
+          "maxLength": 256,
           "type": [
             "string",
             "null"
@@ -169,6 +185,7 @@
         "possible",
         "poor"
       ],
+      "maxLength": 256,
       "type": "string"
     },
     "Kind": {
@@ -178,6 +195,7 @@
         "framework",
         "runtime"
       ],
+      "maxLength": 256,
       "type": "string"
     },
     "Learning": {
@@ -205,6 +223,7 @@
         "moderate",
         "steep"
       ],
+      "maxLength": 256,
       "type": "string"
     },
     "Links": {
@@ -212,6 +231,7 @@
       "properties": {
         "docs": {
           "format": "uri",
+          "maxLength": 2048,
           "type": [
             "string",
             "null"
@@ -219,6 +239,7 @@
         },
         "repo": {
           "format": "uri",
+          "maxLength": 2048,
           "type": [
             "string",
             "null"
@@ -226,6 +247,7 @@
         },
         "website": {
           "format": "uri",
+          "maxLength": 2048,
           "type": "string"
         }
       },
@@ -242,10 +264,12 @@
           "$ref": "#/definitions/PartialDate"
         },
         "title": {
+          "maxLength": 200,
           "type": "string"
         },
         "url": {
           "format": "uri",
+          "maxLength": 2048,
           "type": [
             "string",
             "null"
@@ -262,14 +286,17 @@
       "additionalProperties": false,
       "properties": {
         "name": {
+          "maxLength": 100,
           "type": "string"
         },
         "source": {
           "format": "uri",
+          "maxLength": 2048,
           "type": "string"
         },
         "what": {
           "description": "What they use it for.",
+          "maxLength": 2000,
           "type": "string"
         }
       },
@@ -284,6 +311,7 @@
       "additionalProperties": false,
       "properties": {
         "reason": {
+          "maxLength": 2000,
           "type": "string"
         },
         "value": {
@@ -300,10 +328,12 @@
       "additionalProperties": false,
       "properties": {
         "reason": {
+          "maxLength": 2000,
           "type": "string"
         },
         "value": {
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -384,6 +414,7 @@
     },
     "PartialDate": {
       "description": "A date known to the year, the month or the day: 2006, 2013-05 or 2015-05-15.",
+      "maxLength": 256,
       "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$",
       "type": [
         "string",
@@ -395,17 +426,20 @@
       "description": "A strength or a weakness.",
       "properties": {
         "detail": {
+          "maxLength": 2000,
           "type": "string"
         },
         "sources": {
           "default": [],
           "items": {
             "format": "uri",
+            "maxLength": 2048,
             "type": "string"
           },
           "type": "array"
         },
         "title": {
+          "maxLength": 200,
           "type": "string"
         }
       },
@@ -423,6 +457,7 @@
           "default": [],
           "description": "Symmetric. Must have the same kind.",
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -431,6 +466,7 @@
           "default": [],
           "description": "This entity is built on the target, e.g. `nextjs` → `react`.",
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -439,6 +475,7 @@
           "default": [],
           "description": "Symmetric, e.g. `react` ↔ `typescript`.",
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -447,6 +484,7 @@
           "default": [],
           "description": "This entity runs on the target runtime, e.g. `express` → `nodejs`.",
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -455,6 +493,7 @@
           "default": [],
           "description": "This entity was replaced by the target, e.g. `angularjs` → `angular`.",
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -472,10 +511,12 @@
           "$ref": "#/definitions/ResourceKind"
         },
         "title": {
+          "maxLength": 200,
           "type": "string"
         },
         "url": {
           "format": "uri",
+          "maxLength": 2048,
           "type": "string"
         }
       },
@@ -496,6 +537,7 @@
         "tutorial",
         "video"
       ],
+      "maxLength": 256,
       "type": "string"
     },
     "RuntimeTraits": {
@@ -504,6 +546,7 @@
         "languages": {
           "description": "Ids of language entities.",
           "items": {
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -530,6 +573,7 @@
               "Android: Runs on Android devices.",
               "Embedded: Runs on microcontrollers, often without an operating system."
             ],
+            "maxLength": 256,
             "type": "string"
           },
           "type": "array"
@@ -545,6 +589,7 @@
       "anyOf": [
         {
           "description": "The same name in every survey year.",
+          "maxLength": 60,
           "type": "string"
         },
         {
@@ -552,6 +597,7 @@
           "description": "Each name with the first survey year that used it, such as\n`{2022: React.js, 2023: React}`. A name applies until the next year listed.",
           "patternProperties": {
             "^\\d+$": {
+              "maxLength": 60,
               "type": "string"
             }
           },
@@ -566,6 +612,7 @@
     "aliases": {
       "default": [],
       "items": {
+        "maxLength": 100,
         "type": "string"
       },
       "type": "array"
@@ -573,6 +620,7 @@
     "choose_when": {
       "description": "2–4 situations that each complete the sentence \"Choose <name> when …\",\nshown side by side on compare pages.",
       "items": {
+        "maxLength": 140,
         "type": "string"
       },
       "type": "array"
@@ -584,6 +632,7 @@
       "type": "array"
     },
     "id": {
+      "maxLength": 256,
       "type": "string"
     },
     "ids": {
@@ -599,6 +648,7 @@
       "$ref": "#/definitions/Links"
     },
     "name": {
+      "maxLength": 100,
       "type": "string"
     },
     "notable_users": {
@@ -641,6 +691,7 @@
       "default": [],
       "description": "Paths relative to `content/samples/`.",
       "items": {
+        "maxLength": 256,
         "type": "string"
       },
       "type": "array"
@@ -652,9 +703,11 @@
       "type": "array"
     },
     "summary": {
+      "maxLength": 4000,
       "type": "string"
     },
     "tagline": {
+      "maxLength": 100,
       "type": "string"
     },
     "timeline": {
